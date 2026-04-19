@@ -1,0 +1,12 @@
+.DS_Store
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# Local experiment exports
+output/
+
+# Local environment files
+.env
+.venv/
+venv/
