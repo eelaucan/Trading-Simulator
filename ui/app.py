@@ -33,11 +33,11 @@ from ui.components import (
     render_financial_status_panel,
     render_final_summary,
     render_holdings_panel,
-    render_market_panel,
+    render_market_chart_panel,
+    render_market_watchlist_panel,
     render_pending_liquidations_panel,
     render_portfolio_insight_panel,
     render_risk_panel,
-    render_section_header,
     render_session_bar,
     render_session_setup,
     render_step_feedback,
@@ -94,9 +94,22 @@ def main() -> None:
         st.rerun()
         return
 
-    st.title("Historical Trading Session")
+    st.markdown(
+        (
+            "<div class='platform-header'>"
+            "<div>"
+            "<p class='trade-platform-kicker'>Historical Trading Terminal</p>"
+            "<h1 class='trade-platform-title'>Weekly decision workstation</h1>"
+            "<p class='trade-platform-copy'>"
+            "Review only the market history visible at this point in time, build a weekly trade plan, "
+            "and submit it for the simulator to carry into next week’s open."
+            "</p>"
+            "</div>"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
     if status == SessionStatus.RUNNING:
-        st.caption("Review the current week, assess your portfolio, and decide what should carry into next week's open.")
         render_session_bar(metadata, observation)
     else:
         st.caption("This session is complete. You can review the final summary and save the research files.")
@@ -220,33 +233,18 @@ def _render_running_screen(
     state: PortfolioState,
     last_step_info: dict[str, object] | None,
 ) -> None:
-    render_section_header(
-        "This week’s market context",
-        "Visible market information up to the end of the current week.",
-    )
-    render_market_panel(observation, key_prefix="market")
-
-    st.divider()
-    render_section_header(
-        "Your portfolio now",
-        "Current cash, invested capital, portfolio path, and position mix.",
-    )
     render_financial_status_panel(state)
-    render_portfolio_insight_panel(state)
 
-    st.subheader("Current holdings")
-    holdings_cols = st.columns([1.35, 1.0], gap="medium")
-    with holdings_cols[0]:
-        render_holdings_panel(state)
-    with holdings_cols[1]:
-        render_risk_panel(state)
-        render_pending_liquidations_panel(observation.pending_liquidations)
-
-    st.divider()
-    render_section_header(
-        "Build this week’s plan",
-        "Place your decision for next week’s open, then review the plan before you submit.",
-    )
+    main_cols = st.columns([0.82, 1.78, 1.2], gap="medium")
+    with main_cols[0]:
+        with st.container():
+            selected_ticker = render_market_watchlist_panel(
+                observation,
+                key_prefix="market_terminal_watchlist",
+            )
+    with main_cols[1]:
+        with st.container():
+            render_market_chart_panel(observation, selected_ticker=selected_ticker)
 
     current_batch = list(st.session_state[_ACTION_BATCH_KEY])
     planner_props = build_trade_planner_props(
@@ -256,27 +254,46 @@ def _render_running_screen(
     )
     planner_event: dict[str, object] | None = None
 
-    if trade_planner_component_available():
-        planner_event = render_trade_planner_component(
-            props=planner_props,
-            key="trade_planner_component",
-        )
-    else:
-        st.warning(
-            "The custom trade planner bundle is not available locally yet. "
-            "Build or restore `ui_ts/frontend/dist` to use the TypeScript planner."
-        )
+    with main_cols[2]:
+        if trade_planner_component_available():
+            planner_event = render_trade_planner_component(
+                props=planner_props,
+                key="trade_planner_component",
+            )
+        else:
+            st.warning(
+                "The custom trade planner bundle is not available locally yet. "
+                "Build or restore `ui_ts/frontend/dist` to use the TypeScript planner."
+            )
 
-    if metadata.condition == "human_with_coach_placeholder":
-        st.markdown("")
-        render_coach_placeholder(metadata.condition)
+        if metadata.condition == "human_with_coach_placeholder":
+            st.markdown("")
+            render_coach_placeholder(metadata.condition)
 
     if _handle_trade_planner_event(env, planner_event):
         st.rerun()
 
-    if last_step_info:
-        st.divider()
-        render_step_feedback(last_step_info)
+    lower_tabs = st.tabs(
+        [
+            "Portfolio",
+            "Performance",
+            "Latest outcome",
+        ]
+    )
+    with lower_tabs[0]:
+        portfolio_cols = st.columns([1.18, 0.82], gap="medium")
+        with portfolio_cols[0]:
+            render_holdings_panel(state)
+        with portfolio_cols[1]:
+            render_risk_panel(state)
+            render_pending_liquidations_panel(observation.pending_liquidations)
+    with lower_tabs[1]:
+        render_portfolio_insight_panel(state)
+    with lower_tabs[2]:
+        if last_step_info:
+            render_step_feedback(last_step_info)
+        else:
+            st.caption("No completed weekly decision has been processed yet.")
 
 
 def _render_finished_screen(

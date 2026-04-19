@@ -63,11 +63,14 @@ class PlanImpactPreview:
 
 
 def apply_ui_theme() -> None:
-    """Apply the participant-facing Streamlit typography and layout theme."""
+    """Apply a dark chart-first terminal theme while keeping Streamlit controls usable."""
     st.markdown(
         """
         <style>
         html, body, [class*="st-"], [data-testid="stMarkdownContainer"] *, label, input, textarea, select {
+            font-family: Inter, "Segoe UI", "Helvetica Neue", Arial, sans-serif !important;
+        }
+        h1, h2, h3, h4, .section-kicker, .trade-platform-title, .terminal-bar-value, .watchlist-title {
             font-family: "Times New Roman", Times, serif !important;
         }
         span.material-symbols-rounded,
@@ -83,183 +86,185 @@ def apply_ui_theme() -> None:
             font-feature-settings: "liga";
         }
         .stApp {
-            background: linear-gradient(180deg, #faf7f2 0%, #f4ede3 100%);
-            color: #231b14;
+            background:
+                radial-gradient(circle at top left, rgba(47, 84, 145, 0.18), transparent 24%),
+                linear-gradient(180deg, #0b1017 0%, #101720 100%);
+            color: #dce6ef;
         }
         .main .block-container {
-            max-width: 1380px;
-            padding-top: 1.5rem;
-            padding-bottom: 3.25rem;
+            max-width: 1540px;
+            padding-top: 0.95rem;
+            padding-bottom: 2.4rem;
         }
         h1, h2, h3, h4 {
-            color: #231b14;
+            color: #f4f8fb;
             letter-spacing: 0.01em;
             margin-bottom: 0.25rem;
         }
         h1 {
-            font-size: 2.55rem;
+            font-size: 2.28rem;
             font-weight: 700;
         }
         h2 {
-            font-size: 1.65rem;
+            font-size: 1.46rem;
             font-weight: 700;
         }
         h3 {
-            font-size: 1.12rem;
+            font-size: 1.03rem;
             font-weight: 700;
         }
         p, li, div, span {
-            color: #46392d;
-            line-height: 1.55;
+            color: #b8c4d0;
+            line-height: 1.45;
         }
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #f1ebe2 0%, #ece3d7 100%);
-            border-left: 1px solid #dacdbc;
-            min-width: 290px !important;
-            max-width: 290px !important;
+            background: linear-gradient(180deg, #0e1520 0%, #131b26 100%);
+            border-right: 1px solid #233244;
+            min-width: 276px !important;
+            max-width: 276px !important;
         }
         [data-testid="stSidebar"] .block-container {
             padding-top: 1rem;
-            padding-left: 0.9rem;
-            padding-right: 0.9rem;
+            padding-left: 0.78rem;
+            padding-right: 0.78rem;
         }
         [data-testid="stMetric"] {
-            background: rgba(255, 255, 255, 0.82);
-            border: 1px solid #ddd1c2;
-            border-radius: 18px;
-            padding: 0.95rem 1rem;
-            box-shadow: 0 14px 32px rgba(85, 65, 45, 0.06);
-            min-height: 118px;
+            background: linear-gradient(180deg, rgba(17, 25, 35, 0.98) 0%, rgba(22, 31, 43, 0.98) 100%);
+            border: 1px solid #243548;
+            border-radius: 16px;
+            padding: 0.84rem 0.92rem;
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
+            min-height: 102px;
         }
         [data-testid="stMetricLabel"] {
-            color: #766557;
-            font-size: 0.85rem;
+            color: #88a0b6;
+            font-size: 0.78rem;
             line-height: 1.22;
-            letter-spacing: 0.01em;
-            text-transform: none;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             white-space: normal !important;
             overflow: visible !important;
             text-overflow: unset !important;
         }
         [data-testid="stMetricValue"] {
-            color: #211912;
-            font-size: 1.78rem;
+            color: #f4f7fb;
+            font-size: 1.56rem;
             line-height: 1.1;
         }
         [data-testid="stMetricDelta"] {
-            font-size: 0.95rem;
-        }
-        div[data-testid="stForm"] {
-            background: rgba(255, 255, 255, 0.78);
-            border: 1px solid #ddd1c2;
-            border-radius: 22px;
-            padding: 1.2rem 1.2rem 0.8rem 1.2rem;
-            box-shadow: 0 12px 28px rgba(85, 65, 45, 0.05);
+            font-size: 0.88rem;
         }
         div[data-testid="stDataFrame"] {
-            border: 1px solid #e1d7ca;
-            border-radius: 18px;
+            border: 1px solid #243548;
+            border-radius: 16px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.86);
+            background: rgba(17, 25, 35, 0.92);
+        }
+        div[data-testid="stDataFrame"] * {
+            color: #dbe7f1 !important;
+            background-color: transparent !important;
         }
         div[data-baseweb="select"] > div,
         div[data-baseweb="input"] > div,
         div[data-baseweb="textarea"] > div,
         div[data-baseweb="base-input"] {
             border-radius: 14px !important;
-            border: 1.5px solid #bca185 !important;
-            background: rgba(255, 252, 247, 0.98) !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
+            border: 1.5px solid #37506a !important;
+            background: rgba(15, 22, 31, 0.98) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04) !important;
         }
         div[data-baseweb="select"] > div:focus-within,
         div[data-baseweb="input"] > div:focus-within,
         div[data-baseweb="textarea"] > div:focus-within,
         div[data-baseweb="base-input"]:focus-within {
-            border-color: #205b45 !important;
-            box-shadow: 0 0 0 2px rgba(32, 91, 69, 0.12) !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.16) !important;
         }
         label p {
-            color: #251c14 !important;
+            color: #dce6ef !important;
             font-weight: 700 !important;
             letter-spacing: 0.01em;
         }
+        input, textarea, select {
+            color: #f2f6fa !important;
+        }
         .stButton > button {
-            border-radius: 999px;
-            border: 1px solid #8c6d4c;
-            background: linear-gradient(180deg, #fffdf9 0%, #efe2cd 100%);
-            color: #211911;
-            padding: 0.68rem 1.15rem;
-            min-height: 2.95rem;
+            border-radius: 12px;
+            border: 1px solid #31465a;
+            background: linear-gradient(180deg, #18212b 0%, #121a24 100%);
+            color: #dde7f1;
+            padding: 0.64rem 1rem;
+            min-height: 2.8rem;
             font-weight: 700;
-            font-size: 0.98rem;
+            font-size: 0.93rem;
             line-height: 1.2;
             white-space: normal;
-            box-shadow: 0 12px 22px rgba(88, 62, 36, 0.11);
+            box-shadow: 0 10px 18px rgba(0, 0, 0, 0.18);
             transition: all 0.16s ease;
         }
         .stButton > button:hover {
-            border-color: #205b45;
-            color: #205b45;
+            border-color: #496885;
+            color: #ffffff;
             transform: translateY(-1px);
-            box-shadow: 0 14px 24px rgba(32, 91, 69, 0.14);
+            box-shadow: 0 12px 22px rgba(0, 0, 0, 0.24);
         }
         .stButton > button[kind="primary"] {
-            background: linear-gradient(180deg, #205b45 0%, #163f30 100%);
+            background: linear-gradient(180deg, #1f8f5f 0%, #166946 100%);
             color: white;
-            border-color: #163f30;
-            box-shadow: 0 18px 30px rgba(22, 63, 48, 0.28);
+            border-color: #166946;
+            box-shadow: 0 16px 28px rgba(21, 98, 66, 0.3);
         }
         .stButton > button[kind="primary"]:hover {
             color: white;
-            border-color: #163f30;
+            border-color: #1f8f5f;
         }
         [data-testid="stVerticalBlockBorderWrapper"] {
-            border-radius: 24px !important;
-            border: 1px solid #d3c0aa !important;
-            background: rgba(255, 253, 248, 0.74);
-            box-shadow: 0 18px 32px rgba(83, 61, 38, 0.08);
+            border-radius: 18px !important;
+            border: 1px solid #243548 !important;
+            background: linear-gradient(180deg, rgba(15, 22, 31, 0.96) 0%, rgba(19, 28, 38, 0.96) 100%);
+            box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18);
         }
         .section-shell {
-            background: rgba(255, 255, 255, 0.76);
-            border: 1px solid #ddd2c4;
-            border-radius: 24px;
-            padding: 1rem 1.15rem 0.55rem 1.15rem;
-            margin: 0.3rem 0 1rem 0;
-            box-shadow: 0 14px 30px rgba(82, 63, 41, 0.06);
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin: 0.12rem 0 0.75rem 0;
+            box-shadow: none;
         }
         .section-kicker {
             margin: 0;
-            font-size: 1.42rem;
+            font-size: 1.14rem;
             font-weight: 700;
-            color: #201811;
+            color: #f1f6fb;
         }
         .section-subtitle {
-            margin: 0.3rem 0 0.15rem 0;
-            color: #5f5042;
-            font-size: 0.98rem;
+            margin: 0.22rem 0 0.15rem 0;
+            color: #8da2b7;
+            font-size: 0.9rem;
         }
         .note-card {
-            border-radius: 16px;
-            border: 1px solid #ddd1c2;
-            background: rgba(255, 251, 245, 0.9);
+            border-radius: 14px;
+            border: 1px solid #2a3d51;
+            background: rgba(16, 23, 33, 0.92);
             padding: 0.75rem 0.9rem;
             margin: 0.25rem 0 0.85rem 0;
-            color: #4b3d31;
+            color: #b7c6d6;
         }
         .note-card--quiet {
-            background: rgba(246, 241, 232, 0.92);
+            background: rgba(13, 19, 28, 0.92);
         }
         .sidebar-card {
-            border-radius: 18px;
-            border: 1px solid #d8c9b7;
-            background: rgba(255, 252, 247, 0.9);
-            padding: 0.9rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid #243548;
+            background: rgba(17, 25, 35, 0.92);
+            padding: 0.82rem 0.9rem;
             margin-bottom: 0.85rem;
-            box-shadow: 0 10px 22px rgba(77, 58, 37, 0.06);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
         }
         .sidebar-eyebrow {
             margin: 0 0 0.3rem 0;
-            color: #7a6553;
+            color: #8196ac;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.12em;
@@ -269,9 +274,9 @@ def apply_ui_theme() -> None:
             display: inline-block;
             padding: 0.28rem 0.72rem;
             border-radius: 999px;
-            background: rgba(32, 91, 69, 0.1);
-            border: 1px solid rgba(32, 91, 69, 0.18);
-            color: #174735;
+            background: rgba(59, 130, 246, 0.14);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #d5e7ff;
             font-size: 0.84rem;
             font-weight: 700;
             margin-bottom: 0.6rem;
@@ -284,30 +289,151 @@ def apply_ui_theme() -> None:
             margin: 0.34rem 0;
         }
         .sidebar-label {
-            color: #776454;
+            color: #8aa0b5;
             font-size: 0.85rem;
         }
         .sidebar-value {
-            color: #231b14;
+            color: #edf4fb;
             font-size: 0.92rem;
             font-weight: 700;
             text-align: right;
             word-break: break-word;
         }
-        .empty-plan-card {
+        .platform-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+            margin: 0.1rem 0 0.8rem 0;
+        }
+        .trade-platform-kicker {
+            color: #7e93aa;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: 0.74rem;
+            margin: 0;
+        }
+        .trade-platform-title {
+            color: #f4f8fb;
+            font-size: 2rem;
+            line-height: 1.05;
+            margin: 0.12rem 0 0.08rem 0;
+        }
+        .trade-platform-copy {
+            color: #8ea3b8;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        .terminal-bar {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 0.25rem 0 1rem 0;
+        }
+        .terminal-bar-card {
+            border-radius: 16px;
+            border: 1px solid #243548;
+            background: linear-gradient(180deg, rgba(16, 24, 34, 0.98) 0%, rgba(20, 29, 40, 0.98) 100%);
+            padding: 0.78rem 0.84rem;
+            box-shadow: 0 14px 24px rgba(0, 0, 0, 0.16);
+        }
+        .terminal-bar-label {
+            color: #7f95ab;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.72rem;
+            margin-bottom: 0.3rem;
+        }
+        .terminal-bar-value {
+            color: #f4f8fb;
+            font-size: 1.02rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .terminal-bar-meta {
+            color: #8ea4b9;
+            font-size: 0.83rem;
+            margin-top: 0.42rem;
+        }
+        .watchlist-shell {
             border-radius: 18px;
-            border: 1px dashed #cdbfae;
-            background: rgba(250, 247, 242, 0.96);
-            padding: 0.95rem 1rem;
+            border: 1px solid #243548;
+            background: linear-gradient(180deg, rgba(14, 20, 29, 0.98) 0%, rgba(18, 26, 36, 0.98) 100%);
+            padding: 0.92rem;
+            box-shadow: 0 18px 30px rgba(0, 0, 0, 0.16);
+        }
+        .watchlist-title {
+            color: #eff5fb;
+            font-size: 1.05rem;
+            margin: 0;
+        }
+        .watchlist-copy {
+            color: #8ea4ba;
+            font-size: 0.88rem;
+            margin: 0.24rem 0 0.8rem 0;
+        }
+        .watch-price {
+            color: #eef5fb;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-top: 0.42rem;
+        }
+        .watch-subcopy {
+            color: #7d93a8;
+            font-size: 0.82rem;
+            margin-top: 0.55rem;
+        }
+        .panel-shell {
+            border-radius: 20px;
+            border: 1px solid #243548;
+            background: linear-gradient(180deg, rgba(14, 20, 29, 0.98) 0%, rgba(19, 28, 38, 0.98) 100%);
+            padding: 1rem 1rem 0.82rem 1rem;
+            box-shadow: 0 18px 30px rgba(0, 0, 0, 0.16);
+        }
+        .panel-title {
+            color: #eef5fb;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .panel-copy {
+            color: #8fa5ba;
+            font-size: 0.9rem;
+            margin: 0.22rem 0 0.85rem 0;
+        }
+        .snapshot-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 0.65rem;
+        }
+        .snapshot-symbol {
+            color: #f6fbff;
+            font-size: 1.42rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .snapshot-meta {
+            color: #8ba1b6;
+            font-size: 0.88rem;
+            margin: 0.18rem 0 0 0;
+        }
+        .empty-plan-card {
+            border-radius: 16px;
+            border: 1px dashed #2d4155;
+            background: rgba(11, 17, 26, 0.92);
+            padding: 0.85rem 0.95rem;
             margin: 0.3rem 0 0.85rem 0;
         }
         .empty-plan-title {
             font-weight: 700;
-            color: #2b221a;
+            color: #e8f0f7;
             margin-bottom: 0.2rem;
         }
         .empty-plan-copy {
-            color: #635548;
+            color: #8fa4ba;
             margin: 0;
         }
         .insight-chip {
@@ -315,47 +441,47 @@ def apply_ui_theme() -> None:
             margin: 0 0.45rem 0.45rem 0;
             padding: 0.28rem 0.72rem;
             border-radius: 999px;
-            border: 1px solid #d9cdbe;
-            background: rgba(255, 255, 255, 0.9);
-            color: #4a3d31;
+            border: 1px solid #2f4256;
+            background: rgba(19, 28, 39, 0.92);
+            color: #c3d1de;
             font-size: 0.92rem;
         }
         .insight-chip--good {
-            background: #edf7ef;
-            border-color: #bfdec6;
-            color: #1b6b39;
+            background: rgba(31, 143, 95, 0.14);
+            border-color: rgba(31, 143, 95, 0.28);
+            color: #64e6a5;
         }
         .insight-chip--warn {
-            background: #fff6e8;
-            border-color: #e6cf98;
-            color: #8a5b00;
+            background: rgba(245, 158, 11, 0.14);
+            border-color: rgba(245, 158, 11, 0.28);
+            color: #f7c86c;
         }
         .insight-chip--risk {
-            background: #fdf1f1;
-            border-color: #e7c1c1;
-            color: #a53a3a;
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.24);
+            color: #ff8c8c;
         }
         .insight-chip--neutral {
-            background: #f3f4f6;
-            border-color: #d7dbe0;
-            color: #525866;
+            background: rgba(55, 78, 103, 0.18);
+            border-color: rgba(87, 114, 141, 0.28);
+            color: #bfd2e2;
         }
         .feedback-card {
-            border-radius: 18px;
-            padding: 0.85rem 1rem;
+            border-radius: 16px;
+            padding: 0.82rem 0.95rem;
             margin: 0.15rem 0 0.65rem 0;
-            background: rgba(255, 255, 255, 0.88);
-            border: 1px solid #ddd2c4;
-            box-shadow: 0 10px 24px rgba(83, 63, 42, 0.05);
+            background: rgba(17, 25, 35, 0.96);
+            border: 1px solid #243548;
+            box-shadow: 0 14px 24px rgba(0, 0, 0, 0.16);
         }
-        .feedback-card--success { border-left: 5px solid #3a8f61; }
-        .feedback-card--warning { border-left: 5px solid #c7871d; }
-        .feedback-card--error { border-left: 5px solid #c64e4e; }
-        .feedback-card--neutral { border-left: 5px solid #8c7d6f; }
+        .feedback-card--success { border-left: 5px solid #1f8f5f; }
+        .feedback-card--warning { border-left: 5px solid #d39a27; }
+        .feedback-card--error { border-left: 5px solid #dc5d5d; }
+        .feedback-card--neutral { border-left: 5px solid #607a96; }
         .feedback-title {
-            font-size: 1rem;
+            font-size: 0.98rem;
             font-weight: 700;
-            color: #241c14;
+            color: #f0f6fc;
             margin-bottom: 0.35rem;
         }
         .feedback-card ul {
@@ -364,147 +490,37 @@ def apply_ui_theme() -> None:
         }
         .feedback-card li {
             margin: 0.2rem 0;
-            color: #4a3c30;
+            color: #bfd0de;
         }
         .micro-copy {
-            color: #6b5d51;
-            font-size: 0.93rem;
+            color: #8ea1b4;
+            font-size: 0.88rem;
             margin-top: 0.2rem;
         }
-        .trade-ticket-shell {
-            background: linear-gradient(180deg, rgba(29, 36, 34, 0.98) 0%, rgba(39, 47, 44, 0.98) 100%);
-            border: 1px solid #3d5a4e;
-            border-radius: 24px;
-            padding: 1.05rem 1.1rem 0.85rem 1.1rem;
-            margin-bottom: 0.9rem;
-            box-shadow: 0 18px 34px rgba(27, 31, 30, 0.18);
+        button[role="tab"] {
+            background: rgba(15, 22, 31, 0.92) !important;
+            border: 1px solid #27384a !important;
+            border-radius: 12px !important;
+            color: #99aec3 !important;
         }
-        .trade-ticket-kicker {
-            color: #d7c5ad;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 0.82rem;
-            margin: 0 0 0.25rem 0;
-            font-weight: 700;
+        button[role="tab"][aria-selected="true"] {
+            background: rgba(25, 36, 49, 0.98) !important;
+            border-color: #38506a !important;
+            color: #f1f6fb !important;
         }
-        .trade-ticket-title {
-            color: #fffdf8;
-            font-size: 1.58rem;
-            font-weight: 700;
-            margin: 0;
-            line-height: 1.2;
+        @media (max-width: 1200px) {
+            .terminal-bar {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
-        .trade-ticket-subtitle {
-            color: #e7dccd;
-            margin: 0.35rem 0 0 0;
-            font-size: 0.98rem;
-            line-height: 1.45;
-        }
-        .trade-ticket-status {
-            display: inline-block;
-            margin: 0.7rem 0 0 0;
-            padding: 0.34rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(231, 220, 205, 0.25);
-            color: #f7f1e9;
-            font-size: 0.9rem;
-            font-weight: 700;
-        }
-        .trade-step-pill {
-            display: inline-block;
-            margin: 0.5rem 0.4rem 0 0;
-            padding: 0.28rem 0.68rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(218, 202, 182, 0.22);
-            color: #f7f2ea;
-            font-size: 0.88rem;
-        }
-        .trade-ticket-note {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(215, 197, 173, 0.2);
-            border-radius: 16px;
-            color: #eee3d5;
-            padding: 0.72rem 0.82rem;
-            margin: 0.65rem 0 0.3rem 0;
-            line-height: 1.45;
-        }
-        .review-ticket-shell {
-            background: linear-gradient(180deg, rgba(255, 251, 245, 0.98) 0%, rgba(247, 241, 232, 0.98) 100%);
-            border: 1px solid #d1b594;
-            border-radius: 24px;
-            padding: 1rem 1.05rem 0.8rem 1.05rem;
-            margin-bottom: 0.9rem;
-            box-shadow: 0 16px 28px rgba(90, 66, 40, 0.08);
-        }
-        .review-ticket-kicker {
-            color: #7f6041;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 0.82rem;
-            margin: 0 0 0.25rem 0;
-            font-weight: 700;
-        }
-        .review-ticket-title {
-            color: #2b221a;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin: 0 0 0.15rem 0;
-        }
-        .review-ticket-subtitle {
-            color: #675748;
-            margin: 0;
-            font-size: 0.95rem;
-            line-height: 1.45;
-        }
-        .review-ticket-status {
-            display: inline-block;
-            margin: 0.65rem 0 0 0;
-            padding: 0.34rem 0.78rem;
-            border-radius: 999px;
-            background: rgba(32, 91, 69, 0.08);
-            border: 1px solid rgba(32, 91, 69, 0.15);
-            color: #174735;
-            font-size: 0.9rem;
-            font-weight: 700;
-        }
-        .review-step-pill {
-            display: inline-block;
-            margin: 0.5rem 0.4rem 0 0;
-            padding: 0.28rem 0.68rem;
-            border-radius: 999px;
-            background: rgba(32, 91, 69, 0.08);
-            border: 1px solid rgba(32, 91, 69, 0.15);
-            color: #174735;
-            font-size: 0.88rem;
-            font-weight: 700;
-        }
-        .plan-row-card {
-            border-radius: 18px;
-            border: 1px solid #dcccb9;
-            background: rgba(255, 252, 247, 0.94);
-            padding: 0.82rem 0.95rem;
-            margin-bottom: 0.65rem;
-        }
-        .plan-row-index {
-            color: #7c6653;
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
-        }
-        .plan-row-title {
-            color: #221a13;
-            font-size: 1rem;
-            font-weight: 700;
-            line-height: 1.3;
-        }
-        .plan-row-caption {
-            color: #66584b;
-            font-size: 0.9rem;
-            margin-top: 0.28rem;
+        @media (max-width: 900px) {
+            .terminal-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .platform-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
         </style>
         """,
@@ -691,21 +707,176 @@ def render_session_bar(
     metadata: SessionMetadata,
     observation: Observation,
 ) -> None:
-    """Render the participant's always-visible session summary bar."""
-    bar_cols = st.columns([1.0, 1.1, 1.35, 0.8, 1.0], gap="small")
-    bar_cols[0].metric("Participant", metadata.participant_id)
-    bar_cols[1].metric("Session type", condition_display_label(metadata.condition))
-    bar_cols[2].metric("Episode", metadata.episode_name)
-    bar_cols[3].metric("Week", observation.week_index + 1)
-    bar_cols[4].metric("Date", observation.date.strftime("%Y-%m-%d"))
+    """Render the platform-style session summary row."""
+    cards = [
+        ("Participant", metadata.participant_id),
+        ("Condition", condition_display_label(metadata.condition)),
+        ("Episode", metadata.episode_name),
+        ("Decision Week", f"Week {observation.week_index + 1}"),
+        ("Date", observation.date.strftime("%Y-%m-%d")),
+    ]
+    card_html = "".join(
+        (
+            "<div class='terminal-bar-card'>"
+            f"<div class='terminal-bar-label'>{html.escape(label)}</div>"
+            f"<div class='terminal-bar-value'>{html.escape(value)}</div>"
+            "</div>"
+        )
+        for label, value in cards
+    )
+    st.markdown(f"<div class='terminal-bar'>{card_html}</div>", unsafe_allow_html=True)
     st.markdown(
-        "<p class='micro-copy'>"
-        "This episode began at week "
-        f"{metadata.decision_start_week + 1} with {metadata.visible_history_weeks_at_start} visible "
-        "week(s) already available."
-        "</p>",
+        (
+            "<div class='terminal-bar-meta'>"
+            f"Session started at decision week {metadata.decision_start_week + 1} "
+            f"with {metadata.visible_history_weeks_at_start} visible week(s) already available."
+            "</div>"
+        ),
         unsafe_allow_html=True,
     )
+
+
+def render_market_watchlist_panel(
+    observation: Observation,
+    *,
+    key_prefix: str = "market_watchlist",
+) -> str:
+    """Render a compact terminal-style watchlist and return the selected ticker."""
+    close_history = observation.price_history.loc[:, ["date", "ticker", "close"]].copy()
+    previous_closes = _previous_visible_close_lookup(close_history)
+    current_week = observation.current_week_ohlcv.copy().sort_values("ticker")
+    selection_key = f"{key_prefix}_selected_ticker"
+    default_ticker = _default_chart_ticker(observation)
+
+    if (
+        selection_key not in st.session_state
+        or st.session_state[selection_key] not in observation.available_tickers
+    ):
+        st.session_state[selection_key] = default_ticker
+
+    st.markdown("<p class='watchlist-title'>Watchlist</p>", unsafe_allow_html=True)
+    st.markdown(
+        "<p class='watchlist-copy'>Latest visible closes and moves versus the previous visible close.</p>",
+        unsafe_allow_html=True,
+    )
+
+    for row in current_week.itertuples(index=False):
+        ticker = str(row.ticker)
+        previous_close = previous_closes.get(ticker)
+        change_pct = (
+            float(row.close) / float(previous_close) - 1.0
+            if previous_close is not None and float(previous_close) > _EPSILON
+            else None
+        )
+        row_cols = st.columns([0.45, 0.3, 0.25], gap="small")
+        if row_cols[0].button(
+            ticker,
+            key=f"{key_prefix}_{ticker}",
+            type="primary" if st.session_state[selection_key] == ticker else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state[selection_key] = ticker
+        row_cols[1].markdown(
+            f"<div class='watch-price'>{html.escape(_currency(float(row.close)))}</div>",
+            unsafe_allow_html=True,
+        )
+        row_cols[2].markdown(
+            _watchlist_change_badge_html(change_pct),
+            unsafe_allow_html=True,
+        )
+
+    holdings_count = sum(
+        1 for shares in observation.portfolio_state.shares_dict().values() if shares > _EPSILON
+    )
+    st.markdown(
+        (
+            "<div class='watch-subcopy'>"
+            f"{holdings_count} active holding(s) • "
+            f"{len(observation.pending_liquidations)} forced sale(s) already scheduled"
+            "</div>"
+        ),
+        unsafe_allow_html=True,
+    )
+    return str(st.session_state[selection_key])
+
+
+def render_market_chart_panel(
+    observation: Observation,
+    *,
+    selected_ticker: str,
+) -> None:
+    """Render the main chart-first market panel for the selected visible ticker."""
+    history = observation.price_history.copy()
+    history["date"] = pd.to_datetime(history["date"])
+    ticker_history = history[history["ticker"] == selected_ticker].sort_values("date").copy()
+    current_week = observation.current_week_ohlcv.copy()
+    selected_rows = current_week[current_week["ticker"] == selected_ticker]
+    selected_row = selected_rows.iloc[0] if not selected_rows.empty else None
+
+    current_close = float(selected_row["close"]) if selected_row is not None else None
+    previous_close = (
+        float(ticker_history.iloc[-2]["close"])
+        if len(ticker_history) >= 2
+        else None
+    )
+    history_weeks_visible = int(ticker_history["date"].nunique()) if not ticker_history.empty else 0
+
+    st.markdown("<p class='panel-title'>Market Context</p>", unsafe_allow_html=True)
+    st.markdown(
+        "<p class='panel-copy'>Only visible history through the current decision week is shown here.</p>",
+        unsafe_allow_html=True,
+    )
+
+    snapshot_cols = st.columns(5, gap="small")
+    snapshot_cols[0].metric("Ticker", selected_ticker)
+    snapshot_cols[1].metric(
+        "Visible close",
+        _currency(current_close) if current_close is not None else "N/A",
+    )
+    if current_close is not None and previous_close is not None:
+        snapshot_cols[1].markdown(
+            _price_change_badge_html(current_close - previous_close),
+            unsafe_allow_html=True,
+        )
+    snapshot_cols[2].metric(
+        "Week open",
+        _currency(float(selected_row["open"])) if selected_row is not None else "N/A",
+    )
+    snapshot_cols[3].metric(
+        "Week range",
+        (
+            f"{_currency(float(selected_row['low']))} to {_currency(float(selected_row['high']))}"
+            if selected_row is not None
+            else "N/A"
+        ),
+    )
+    snapshot_cols[4].metric("Visible weeks", str(history_weeks_visible))
+
+    if not ticker_history.empty:
+        st.altair_chart(_candlestick_chart(ticker_history), use_container_width=True)
+    else:
+        render_note_card(
+            f"No visible market history is available for {selected_ticker}.",
+            quiet=True,
+        )
+        return
+
+    insight_cols = st.columns([1.2, 0.8], gap="medium")
+    with insight_cols[0]:
+        render_insight_chips(_market_insight_chips(ticker_history))
+        render_note_card(_market_context_summary(ticker_history, selected_ticker), quiet=True)
+    with insight_cols[1]:
+        st.markdown("**Recent visible close changes**")
+        if len(ticker_history) >= 2:
+            st.altair_chart(
+                _recent_change_chart(ticker_history.tail(min(8, len(ticker_history)))),
+                use_container_width=True,
+            )
+        else:
+            render_note_card(
+                "Recent weekly changes appear once more than one visible week is available.",
+                quiet=True,
+            )
 
 
 def render_market_panel(
@@ -713,135 +884,9 @@ def render_market_panel(
     *,
     key_prefix: str = "market_panel",
 ) -> None:
-    """Render the participant-visible market view for the current week."""
-    st.caption("Visible through the end of the current week only. No later prices are shown.")
-
-    close_history = observation.price_history.loc[:, ["date", "ticker", "close"]].copy()
-    close_history["date"] = pd.to_datetime(close_history["date"])
-    default_ticker = _default_chart_ticker(observation)
-    selected_ticker = st.selectbox(
-        "Choose a stock to inspect",
-        options=observation.available_tickers,
-        index=observation.available_tickers.index(default_ticker),
-        key=f"{key_prefix}_chart_ticker",
-    )
-    ticker_history = close_history[close_history["ticker"] == selected_ticker].copy()
-
-    current_week = observation.current_week_ohlcv.copy()
-    selected_rows = current_week[current_week["ticker"] == selected_ticker]
-    selected_row = selected_rows.iloc[0] if not selected_rows.empty else None
-
-    history_weeks_visible = int(ticker_history["date"].nunique()) if not ticker_history.empty else 0
-    previous_close = None
-    current_close = None
-    if len(ticker_history) >= 2:
-        previous_close = float(ticker_history.iloc[-2]["close"])
-    if selected_row is not None:
-        current_close = float(selected_row["close"])
-
-    insight_cols = st.columns([1.7, 1.0], gap="large")
-    with insight_cols[0]:
-        st.markdown("**Selected stock snapshot**")
-        summary_cols = st.columns(5)
-        summary_cols[0].metric("Selected Stock", selected_ticker)
-        summary_cols[1].metric(
-            "Current Close",
-            _currency(current_close) if current_close is not None else "N/A",
-        )
-        if current_close is not None and previous_close is not None:
-            summary_cols[1].markdown(
-                _price_change_badge_html(current_close - previous_close),
-                unsafe_allow_html=True,
-            )
-            summary_cols[1].caption("vs previous visible close")
-        else:
-            summary_cols[1].caption("No earlier visible close is visible yet.")
-        summary_cols[2].metric(
-            "This Week's Open",
-            _currency(float(selected_row["open"])) if selected_row is not None else "N/A",
-        )
-        summary_cols[3].metric(
-            "This Week's Range",
-            (
-                f"{_currency(float(selected_row['low']))} to {_currency(float(selected_row['high']))}"
-                if selected_row is not None
-                else "N/A"
-            ),
-        )
-        summary_cols[4].metric("Visible History", f"{history_weeks_visible} week(s)")
-
-        st.markdown("**Recent visible price history**")
-        if len(ticker_history) >= 2:
-            st.altair_chart(
-                _market_history_chart(ticker_history, selected_ticker),
-                use_container_width=True,
-            )
-        elif len(ticker_history) == 1:
-            render_note_card(
-                f"Only one visible week is available so far for {selected_ticker}, so there is not yet a useful trend chart.",
-                quiet=True,
-            )
-        else:
-            render_note_card(
-                "No visible price history is available for the selected stock.",
-                quiet=True,
-            )
-        st.caption(
-            "The chart ends at the current decision week and reflects only the visible history so far."
-        )
-
-    with insight_cols[1]:
-        st.markdown("**Trend so far**")
-        market_chips = _market_insight_chips(ticker_history)
-        render_insight_chips(market_chips)
-        render_note_card(_market_context_summary(ticker_history, selected_ticker), quiet=True)
-
-        if current_close is not None and previous_close is not None and previous_close > _EPSILON:
-            st.metric(
-                "Move vs previous visible close",
-                _pct((current_close / previous_close) - 1.0),
-                delta=_signed_currency_text(current_close - previous_close),
-            )
-        elif current_close is not None:
-            st.metric("Move vs previous visible close", "N/A")
-
-        if len(ticker_history) >= 2:
-            recent_slice = ticker_history.tail(min(8, len(ticker_history)))
-            st.markdown("**Weekly close changes in the recent visible window**")
-            st.altair_chart(
-                _recent_change_chart(recent_slice),
-                use_container_width=True,
-            )
-
-    st.markdown("**Current market table**")
-    visible_week = observation.current_week_ohlcv.copy()
-    previous_closes = _previous_visible_close_lookup(close_history)
-    visible_week["change_vs_previous_close"] = visible_week.apply(
-        lambda row: (
-            float(row["close"]) / float(previous_closes[row["ticker"]]) - 1.0
-            if row["ticker"] in previous_closes and float(previous_closes[row["ticker"]]) > 0.0
-            else float("nan")
-        ),
-        axis=1,
-    )
-    visible_week = visible_week.loc[:, ["ticker", "close", "change_vs_previous_close", "low", "high", "volume"]]
-    visible_week = visible_week.rename(
-        columns={
-            "ticker": "Stock",
-            "close": "Close",
-            "change_vs_previous_close": "Change vs Previous Visible Close",
-            "low": "Low",
-            "high": "High",
-            "volume": "Volume",
-        }
-    )
-    for column in ("Close", "Low", "High"):
-        visible_week[column] = visible_week[column].map(_currency)
-    visible_week["Change vs Previous Visible Close"] = visible_week[
-        "Change vs Previous Visible Close"
-    ].map(lambda value: "N/A" if pd.isna(value) else _pct(float(value)))
-    visible_week["Volume"] = visible_week["Volume"].map(lambda value: f"{int(value):,}")
-    st.dataframe(visible_week.reset_index(drop=True), use_container_width=True, hide_index=True)
+    """Compatibility renderer for a stacked watchlist and chart view."""
+    selected_ticker = render_market_watchlist_panel(observation, key_prefix=f"{key_prefix}_watch")
+    render_market_chart_panel(observation, selected_ticker=selected_ticker)
 
 
 def render_financial_status_panel(state: PortfolioState) -> None:
@@ -850,14 +895,11 @@ def render_financial_status_panel(state: PortfolioState) -> None:
     holdings_count = sum(1 for shares in state.shares_dict().values() if shares > _EPSILON)
 
     summary_cols = st.columns(4)
-    summary_cols[0].metric("Cash available", _currency(state.cash))
-    summary_cols[1].metric("Currently invested", _currency(invested_amount))
-    summary_cols[2].metric("Portfolio value", _currency(state.total_nav))
-    summary_cols[3].metric("Open holdings", str(holdings_count))
-    st.caption(
-        "Cash available now is the money not currently invested. Currently invested is the value "
-        "already sitting in stock positions."
-    )
+    summary_cols[0].metric("Cash", _currency(state.cash))
+    summary_cols[1].metric("Invested", _currency(invested_amount))
+    summary_cols[2].metric("Account value", _currency(state.total_nav))
+    summary_cols[3].metric("Positions", str(holdings_count))
+    st.caption("Current cash and invested capital at the end of the visible decision week.")
 
 
 def render_holdings_panel(state: PortfolioState) -> None:
@@ -884,12 +926,12 @@ def render_holdings_panel(state: PortfolioState) -> None:
             }
         )
 
-    st.markdown("**Current holdings**")
+    st.markdown("**Open positions**")
     if holdings_rows:
         st.dataframe(pd.DataFrame(holdings_rows), use_container_width=True, hide_index=True)
     else:
         render_note_card(
-            "You currently hold only cash. No stock positions are open right now.",
+            "All capital is currently in cash. No stock positions are open right now.",
             quiet=True,
         )
 
@@ -901,7 +943,7 @@ def render_portfolio_insight_panel(state: PortfolioState) -> None:
 
     top_cols = st.columns([1.25, 0.95], gap="large")
     with top_cols[0]:
-        st.markdown("**Portfolio value so far**")
+        st.markdown("**Account equity so far**")
         if len(nav_frame) >= 2:
             st.altair_chart(
                 _portfolio_value_chart(nav_frame, initial_nav=float(state.nav_history[0])),
@@ -917,7 +959,7 @@ def render_portfolio_insight_panel(state: PortfolioState) -> None:
         st.markdown("**Portfolio reading**")
         render_insight_chips(insight_chips)
         render_note_card(_portfolio_context_summary(state), quiet=True)
-        st.markdown("**Current portfolio mix**")
+        st.markdown("**Current allocation**")
         st.altair_chart(_allocation_chart(state), use_container_width=True)
 
     st.markdown("**Drawdown so far**")
@@ -938,16 +980,16 @@ def render_portfolio_panel(state: PortfolioState) -> None:
 
 def render_risk_panel(state: PortfolioState) -> None:
     """Render the current portfolio risk snapshot in plain language."""
-    risk_cols = st.columns(3)
-    risk_cols[0].metric("Concentration (HHI)", f"{state.concentration_hhi:.4f}")
-    risk_cols[1].metric("This week's turnover", _pct(state.weekly_turnover))
-    risk_cols[2].metric(
-        "Portfolio Volatility",
+    risk_cols = st.columns(4)
+    risk_cols[0].metric("Realized P/L", _currency(state.realized_pnl))
+    risk_cols[1].metric("Concentration", f"{state.concentration_hhi:.4f}")
+    risk_cols[2].metric("Turnover", _pct(state.weekly_turnover))
+    risk_cols[3].metric(
+        "Volatility",
         "Not available yet" if state.portfolio_volatility is None else _pct(state.portfolio_volatility),
     )
     st.caption(
-        "The simulator tracks concentration, turnover, and portfolio volatility because later "
-        "actions can be clipped or rejected if they break hard rules."
+        "Risk controls are enforced by the simulator when later actions are validated."
     )
 
 
@@ -958,7 +1000,7 @@ def render_pending_liquidations_panel(
     st.markdown("**Pending forced sales**")
     if not pending_liquidations:
         render_note_card(
-            "No forced sale is currently scheduled for a future week.",
+            "No forced sales are currently scheduled.",
             quiet=True,
         )
         return
@@ -1916,6 +1958,30 @@ def _previous_visible_close_lookup(close_history: pd.DataFrame) -> dict[str, flo
     return previous
 
 
+def _configure_dark_chart(
+    chart: alt.Chart | alt.LayerChart | alt.ConcatChart,
+) -> alt.Chart | alt.LayerChart | alt.ConcatChart:
+    """Apply a dark trading-terminal style to Altair charts."""
+    return (
+        chart.configure(background="transparent")
+        .configure_view(strokeOpacity=0, fill="#131b25")
+        .configure_axis(
+            labelColor="#8ea6bc",
+            titleColor="#8ea6bc",
+            gridColor="#223140",
+            domainColor="#314455",
+            tickColor="#314455",
+        )
+        .configure_legend(
+            labelColor="#c8d5e0",
+            titleColor="#9cb0c3",
+            strokeColor="#243548",
+            fillColor="#131b25",
+        )
+        .configure_title(color="#eff5fb")
+    )
+
+
 def _market_history_chart(ticker_history: pd.DataFrame, ticker: str) -> alt.Chart:
     history = ticker_history.copy()
     history["date"] = pd.to_datetime(history["date"])
@@ -1930,13 +1996,68 @@ def _market_history_chart(ticker_history: pd.DataFrame, ticker: str) -> alt.Char
             ],
         )
     )
-    line = base.mark_line(color="#6a533d", strokeWidth=3)
-    points = base.mark_circle(color="#6a533d", size=48)
-    return (
-        (line + points)
-        .properties(height=280)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
+    line = base.mark_line(color="#4da3ff", strokeWidth=2.4)
+    points = base.mark_circle(color="#9bd0ff", size=38)
+    return _configure_dark_chart((line + points).properties(height=280))
+
+
+def _candlestick_chart(ticker_history: pd.DataFrame) -> alt.ConcatChart:
+    """Render a dark OHLC chart with a compact volume panel."""
+    history = ticker_history.copy().sort_values("date")
+    history["date"] = pd.to_datetime(history["date"])
+    history["direction"] = history.apply(
+        lambda row: "Up" if float(row["close"]) >= float(row["open"]) else "Down",
+        axis=1,
+    )
+    history["body_low"] = history[["open", "close"]].min(axis=1)
+    history["body_high"] = history[["open", "close"]].max(axis=1)
+
+    price_base = alt.Chart(history).encode(
+        x=alt.X("date:T", title=None, axis=alt.Axis(labelAngle=0)),
+        tooltip=[
+            alt.Tooltip("date:T", title="Week"),
+            alt.Tooltip("open:Q", title="Open", format=",.2f"),
+            alt.Tooltip("high:Q", title="High", format=",.2f"),
+            alt.Tooltip("low:Q", title="Low", format=",.2f"),
+            alt.Tooltip("close:Q", title="Close", format=",.2f"),
+            alt.Tooltip("volume:Q", title="Volume", format=",.0f"),
+        ],
+    )
+    wicks = price_base.mark_rule(color="#98a7b6").encode(
+        y=alt.Y("low:Q", title="Price"),
+        y2="high:Q",
+    )
+    bodies = price_base.mark_bar(size=10).encode(
+        y="body_low:Q",
+        y2="body_high:Q",
+        color=alt.Color(
+            "direction:N",
+            scale=alt.Scale(domain=["Up", "Down"], range=["#1f8f5f", "#dc5d5d"]),
+            legend=None,
+        ),
+    )
+    price_chart = (wicks + bodies).properties(height=390)
+
+    volume_chart = (
+        alt.Chart(history)
+        .mark_bar(opacity=0.72)
+        .encode(
+            x=alt.X("date:T", title=None, axis=alt.Axis(labels=False, ticks=False)),
+            y=alt.Y("volume:Q", title="Volume"),
+            color=alt.Color(
+                "direction:N",
+                scale=alt.Scale(domain=["Up", "Down"], range=["#1f8f5f", "#dc5d5d"]),
+                legend=None,
+            ),
+            tooltip=[
+                alt.Tooltip("date:T", title="Week"),
+                alt.Tooltip("volume:Q", title="Volume", format=",.0f"),
+            ],
+        )
+        .properties(height=100)
+    )
+    return _configure_dark_chart(
+        alt.vconcat(price_chart, volume_chart, spacing=8).resolve_scale(x="shared")
     )
 
 
@@ -1947,7 +2068,7 @@ def _recent_change_chart(recent_slice: pd.DataFrame) -> alt.Chart:
     history["direction"] = history["weekly_change"].apply(
         lambda value: "Positive" if value > _EPSILON else ("Negative" if value < -_EPSILON else "Flat")
     )
-    return (
+    return _configure_dark_chart(
         alt.Chart(history)
         .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
         .encode(
@@ -1957,7 +2078,7 @@ def _recent_change_chart(recent_slice: pd.DataFrame) -> alt.Chart:
                 "direction:N",
                 scale=alt.Scale(
                     domain=["Positive", "Negative", "Flat"],
-                    range=["#4d8b63", "#b8554e", "#8b7f73"],
+                    range=["#1f8f5f", "#dc5d5d", "#607a96"],
                 ),
                 legend=None,
             ),
@@ -1967,8 +2088,6 @@ def _recent_change_chart(recent_slice: pd.DataFrame) -> alt.Chart:
             ],
         )
         .properties(height=190)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
     )
 
 
@@ -2050,25 +2169,20 @@ def _portfolio_value_chart(nav_frame: pd.DataFrame, initial_nav: float) -> alt.C
             alt.Tooltip("nav:Q", title="Portfolio Value", format=",.2f"),
         ],
     )
-    line = base.mark_line(color="#6a533d", strokeWidth=3)
-    points = base.mark_circle(color="#6a533d", size=42)
+    line = base.mark_line(color="#4da3ff", strokeWidth=2.5)
+    points = base.mark_circle(color="#9bd0ff", size=32)
     baseline = alt.Chart(pd.DataFrame({"initial_nav": [initial_nav]})).mark_rule(
-        color="#b7a592",
+        color="#607a96",
         strokeDash=[5, 5],
     ).encode(y="initial_nav:Q")
-    return (
-        (line + points + baseline)
-        .properties(height=250)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
-    )
+    return _configure_dark_chart((line + points + baseline).properties(height=240))
 
 
 def _drawdown_chart(nav_frame: pd.DataFrame) -> alt.Chart:
     chart_frame = nav_frame.copy()
-    return (
+    return _configure_dark_chart(
         alt.Chart(chart_frame)
-        .mark_area(color="#d6b186", line={"color": "#aa7d4b"})
+        .mark_area(color="rgba(220,93,93,0.42)", line={"color": "#dc5d5d"})
         .encode(
             x=alt.X("decision_step:Q", title="Decision Step"),
             y=alt.Y("drawdown:Q", title="Drawdown", axis=alt.Axis(format=".0%")),
@@ -2078,8 +2192,6 @@ def _drawdown_chart(nav_frame: pd.DataFrame) -> alt.Chart:
             ],
         )
         .properties(height=210)
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
     )
 
 
@@ -2103,7 +2215,7 @@ def _allocation_chart(state: PortfolioState) -> alt.Chart:
             }
         )
     allocation_frame = pd.DataFrame(allocation_rows)
-    return (
+    return _configure_dark_chart(
         alt.Chart(allocation_frame)
         .mark_bar(cornerRadiusEnd=8)
         .encode(
@@ -2111,7 +2223,7 @@ def _allocation_chart(state: PortfolioState) -> alt.Chart:
             x=alt.X("weight:Q", title="Share of Current Portfolio", axis=alt.Axis(format=".0%")),
             color=alt.Color(
                 "type:N",
-                scale=alt.Scale(domain=["Cash", "Holding"], range=["#c7ae90", "#6a533d"]),
+                scale=alt.Scale(domain=["Cash", "Holding"], range=["#607a96", "#4da3ff"]),
                 legend=None,
             ),
             tooltip=[
@@ -2121,8 +2233,6 @@ def _allocation_chart(state: PortfolioState) -> alt.Chart:
             ],
         )
         .properties(height=max(150, 40 * len(allocation_rows)))
-        .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
     )
 
 
@@ -2194,6 +2304,56 @@ def _default_chart_ticker(observation: Observation) -> str:
     if held_tickers:
         return held_tickers[0]
     return observation.available_tickers[0]
+
+
+def _watchlist_change_badge_html(change_pct: float | None) -> str:
+    """Render a compact change badge for the watchlist."""
+    if change_pct is None:
+        return (
+            "<div style=\""
+            "display:inline-block;"
+            "padding:0.28rem 0.55rem;"
+            "border-radius:999px;"
+            "background:rgba(96,122,150,0.16);"
+            "border:1px solid rgba(96,122,150,0.22);"
+            "color:#b9cad9;"
+            "font-weight:700;"
+            "font-size:0.82rem;"
+            "line-height:1.15;"
+            "\">--</div>"
+        )
+
+    if change_pct > _EPSILON:
+        arrow = "↑"
+        text_color = "#72e0a5"
+        background_color = "rgba(31,143,95,0.16)"
+        border_color = "rgba(31,143,95,0.24)"
+    elif change_pct < -_EPSILON:
+        arrow = "↓"
+        text_color = "#ff8e8e"
+        background_color = "rgba(220,93,93,0.16)"
+        border_color = "rgba(220,93,93,0.24)"
+    else:
+        arrow = "→"
+        text_color = "#bfd2e2"
+        background_color = "rgba(96,122,150,0.16)"
+        border_color = "rgba(96,122,150,0.22)"
+
+    return (
+        "<div style=\""
+        "display:inline-block;"
+        "padding:0.28rem 0.55rem;"
+        "border-radius:999px;"
+        f"background:{background_color};"
+        f"border:1px solid {border_color};"
+        f"color:{text_color};"
+        "font-weight:700;"
+        "font-size:0.82rem;"
+        "line-height:1.15;"
+        "\">"
+        f"{arrow} {abs(change_pct):.2%}"
+        "</div>"
+    )
 
 
 def _action_summary(action: Action | None) -> str:
@@ -2300,16 +2460,19 @@ def _pct(value: float) -> str:
 def _price_change_badge_html(change: float) -> str:
     if change > _EPSILON:
         arrow = "↑"
-        text_color = "#0f6b2b"
-        background_color = "#eaf7ee"
+        text_color = "#72e0a5"
+        background_color = "rgba(31,143,95,0.16)"
+        border_color = "rgba(31,143,95,0.24)"
     elif change < -_EPSILON:
         arrow = "↓"
-        text_color = "#b42318"
-        background_color = "#fef3f2"
+        text_color = "#ff8e8e"
+        background_color = "rgba(220,93,93,0.16)"
+        border_color = "rgba(220,93,93,0.24)"
     else:
         arrow = "→"
-        text_color = "#475467"
-        background_color = "#f2f4f7"
+        text_color = "#bfd2e2"
+        background_color = "rgba(96,122,150,0.16)"
+        border_color = "rgba(96,122,150,0.22)"
 
     value_text = f"{arrow} {_currency(abs(change))}"
     return (
@@ -2318,9 +2481,10 @@ def _price_change_badge_html(change: float) -> str:
         "padding:0.25rem 0.6rem;"
         "border-radius:999px;"
         f"background:{background_color};"
+        f"border:1px solid {border_color};"
         f"color:{text_color};"
-        "font-weight:600;"
-        "font-size:0.95rem;"
+        "font-weight:700;"
+        "font-size:0.92rem;"
         "line-height:1.2;"
         "\">"
         f"{value_text}"
