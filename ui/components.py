@@ -1039,6 +1039,133 @@ def render_plan_impact_preview(
         st.caption(note)
 
 
+def build_plan_impact_preview(
+    *,
+    config: SimulatorConfig,
+    observation: Observation,
+    current_batch: Sequence[Action],
+) -> PlanImpactPreview:
+    """Return the participant-facing plan preview using only visible data."""
+    return _build_plan_impact_preview(
+        config=config,
+        observation=observation,
+        current_batch=current_batch,
+    )
+
+
+def build_trade_planner_props(
+    *,
+    config: SimulatorConfig,
+    observation: Observation,
+    current_batch: Sequence[Action],
+) -> dict[str, Any]:
+    """Build a decision-time-only payload for the TypeScript trade planner."""
+    state = observation.portfolio_state
+    shares = state.shares_dict()
+    market_values = state.market_value_dict()
+    cost_basis = state.cost_basis_dict()
+    stop_levels = state.stop_levels_dict()
+    close_prices = _close_price_lookup(observation)
+    preview = build_plan_impact_preview(
+        config=config,
+        observation=observation,
+        current_batch=current_batch,
+    )
+
+    holdings_payload = [
+        {
+            "ticker": ticker,
+            "shares": float(shares[ticker]),
+            "average_cost": float(cost_basis.get(ticker, 0.0)),
+            "market_value": float(market_values.get(ticker, 0.0)),
+            "weight": (
+                float(market_values.get(ticker, 0.0)) / float(state.total_nav)
+                if state.total_nav > _EPSILON
+                else 0.0
+            ),
+            "active_stop": (
+                float(stop_levels[ticker]) if ticker in stop_levels else None
+            ),
+            "current_close": float(close_prices.get(ticker, 0.0)) if ticker in close_prices else None,
+        }
+        for ticker in sorted(shares)
+    ]
+
+    ticker_options = {
+        action_type.value: _ticker_options_for_action(
+            action_type=action_type,
+            available_tickers=observation.available_tickers,
+            holdings=shares,
+            active_stop_tickers=stop_levels.keys(),
+        )
+        for action_type in (
+            ActionType.BUY,
+            ActionType.SELL,
+            ActionType.REDUCE,
+            ActionType.SET_STOP,
+            ActionType.REMOVE_STOP,
+        )
+    }
+
+    current_batch_payload = [
+        {
+            "action_type": action.action_type.value,
+            "ticker": action.ticker,
+            "quantity": float(action.quantity) if action.quantity is not None else None,
+            "quantity_type": (
+                action.quantity_type.value if action.quantity_type is not None else None
+            ),
+            "fraction": float(action.fraction) if action.fraction is not None else None,
+            "stop_price": float(action.stop_price) if action.stop_price is not None else None,
+            "summary": _action_summary(action),
+            "detail": _action_detail(action),
+        }
+        for action in current_batch
+    ]
+
+    return {
+        "current_week_index": int(observation.week_index),
+        "current_date": observation.date.isoformat(),
+        "max_actions_per_step": int(config.max_actions_per_step),
+        "remaining_action_slots": max(0, config.max_actions_per_step - len(current_batch)),
+        "available_tickers": list(observation.available_tickers),
+        "current_cash": float(state.cash),
+        "current_total_nav": float(state.total_nav),
+        "current_batch": current_batch_payload,
+        "holdings": holdings_payload,
+        "active_stops": {ticker: float(value) for ticker, value in sorted(stop_levels.items())},
+        "pending_liquidations": [
+            {
+                "ticker": item.ticker,
+                "triggered_by_low": float(item.triggered_by_low),
+                "stop_level": float(item.stop_level),
+                "execution_week": int(item.execution_week),
+            }
+            for item in sorted(
+                observation.pending_liquidations,
+                key=lambda value: (value.execution_week, value.ticker),
+            )
+        ],
+        "ticker_options": ticker_options,
+        "close_prices": {ticker: float(value) for ticker, value in sorted(close_prices.items())},
+        "plan_impact": {
+            "estimated_spend": float(preview.estimated_spend),
+            "estimated_proceeds": float(preview.estimated_proceeds),
+            "estimated_transaction_costs": float(preview.estimated_transaction_costs),
+            "estimated_remaining_cash": float(preview.estimated_remaining_cash),
+            "estimated_positions_after": int(preview.estimated_positions_after),
+            "estimated_invested_after": float(preview.estimated_invested_after),
+            "projected_max_weight": (
+                float(preview.projected_max_weight)
+                if preview.projected_max_weight is not None
+                else None
+            ),
+            "warnings": list(preview.warnings),
+            "notes": list(preview.notes),
+        },
+    }
+
+
 def render_action_builder(
     *,
     config: SimulatorConfig,

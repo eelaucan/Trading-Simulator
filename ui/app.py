@@ -19,7 +19,7 @@ except ImportError as exc:  # pragma: no cover - runtime-only dependency message
         "Streamlit is required to run the UI. Install it with `pip install streamlit`."
     ) from exc
 
-from simulator.actions import Action, ActionType
+from simulator.actions import Action, ActionType, QuantityType
 from simulator.config import SimulatorConfig
 from simulator.env import TradingEnvironment
 from simulator.market import MarketReplay
@@ -28,26 +28,26 @@ from simulator.observation import Observation
 from simulator.state import PortfolioState
 from ui.components import (
     apply_ui_theme,
-    render_action_batch_preview,
-    render_action_builder,
+    build_trade_planner_props,
     render_coach_placeholder,
     render_financial_status_panel,
     render_final_summary,
     render_holdings_panel,
     render_market_panel,
     render_pending_liquidations_panel,
-    render_plan_impact_preview,
     render_portfolio_insight_panel,
     render_risk_panel,
-    render_plan_review_banner,
     render_section_header,
     render_session_bar,
     render_session_setup,
     render_step_feedback,
-    render_trade_ticket_banner,
 )
 from ui.export import export_session_results
 from ui.session import SessionMetadata, SessionStatus, condition_display_label
+from ui_ts.python.trade_planner_component import (
+    render_trade_planner_component,
+    trade_planner_component_available,
+)
 
 
 _STATUS_KEY = "ui_session_status"
@@ -60,6 +60,7 @@ _LAST_STEP_INFO_KEY = "ui_last_step_info"
 _METRICS_KEY = "ui_metrics"
 _EXPORT_DIR_KEY = "ui_export_dir"
 _STEP_ERROR_KEY = "ui_step_error"
+_PLANNER_EVENT_KEY = "ui_trade_planner_event_id"
 
 
 def main() -> None:
@@ -248,79 +249,29 @@ def _render_running_screen(
     )
 
     current_batch = list(st.session_state[_ACTION_BATCH_KEY])
-    action_cols = st.columns([1.08, 0.92], gap="medium")
+    planner_props = build_trade_planner_props(
+        config=env.config,
+        observation=observation,
+        current_batch=current_batch,
+    )
+    planner_event: dict[str, object] | None = None
 
-    with action_cols[0]:
-        with st.container(border=True):
-            render_trade_ticket_banner(
-                remaining_slots=env.config.max_actions_per_step - len(current_batch),
-                max_actions_per_step=env.config.max_actions_per_step,
-            )
+    if trade_planner_component_available():
+        planner_event = render_trade_planner_component(
+            props=planner_props,
+            key="trade_planner_component",
+        )
+    else:
+        st.warning(
+            "The custom trade planner bundle is not available locally yet. "
+            "Build or restore `ui_ts/frontend/dist` to use the TypeScript planner."
+        )
 
-            new_action: Action | None = None
-            action_error: str | None = None
-            if metadata.condition == "human_with_coach_placeholder":
-                decision_cols = st.columns([1.7, 0.9], gap="large")
-                with decision_cols[0]:
-                    new_action, action_error = render_action_builder(
-                        config=env.config,
-                        observation=observation,
-                        current_batch=current_batch,
-                        key_prefix="action_builder",
-                    )
-                with decision_cols[1]:
-                    render_coach_placeholder(metadata.condition)
-            else:
-                new_action, action_error = render_action_builder(
-                    config=env.config,
-                    observation=observation,
-                    current_batch=current_batch,
-                    key_prefix="action_builder",
-                )
+    if metadata.condition == "human_with_coach_placeholder":
+        st.markdown("")
+        render_coach_placeholder(metadata.condition)
 
-            if action_error:
-                st.error(action_error)
-            if new_action is not None:
-                try:
-                    current_batch = _append_action_to_batch(
-                        current_batch,
-                        new_action,
-                        env.config.max_actions_per_step,
-                    )
-                    st.session_state[_ACTION_BATCH_KEY] = current_batch
-                    st.success("Decision added to this week's plan.")
-                except ValueError as exc:
-                    st.error(str(exc))
-
-    with action_cols[1]:
-        with st.container(border=True):
-            render_plan_review_banner(
-                current_actions=len(current_batch),
-                max_actions_per_step=env.config.max_actions_per_step,
-            )
-            render_plan_impact_preview(
-                config=env.config,
-                observation=observation,
-                current_batch=current_batch,
-                max_actions_per_step=env.config.max_actions_per_step,
-            )
-            preview_result = render_action_batch_preview(
-                current_batch,
-                max_actions_per_step=env.config.max_actions_per_step,
-                pending_forced_sales_count=len(observation.pending_liquidations),
-                key_prefix="action_batch",
-            )
-
-    if preview_result["remove_index"] is not None:
-        remove_index = int(preview_result["remove_index"])
-        updated_batch = list(current_batch)
-        updated_batch.pop(remove_index)
-        st.session_state[_ACTION_BATCH_KEY] = updated_batch
-        st.rerun()
-    if preview_result["clear_batch"]:
-        st.session_state[_ACTION_BATCH_KEY] = []
-        st.rerun()
-    if preview_result["submit_batch"] and _submit_batch():
+    if _handle_trade_planner_event(env, planner_event):
         st.rerun()
 
     if last_step_info:
@@ -423,6 +374,95 @@ def _append_action_to_batch(
     return updated_batch
 
 
+def _handle_trade_planner_event(
+    env: TradingEnvironment,
+    planner_event: dict[str, object] | None,
+) -> bool:
+    """Process the latest event emitted by the TypeScript trade planner."""
+    if not planner_event:
+        return False
+
+    event_id = str(planner_event.get("event_id", "")).strip()
+    if not event_id or event_id == st.session_state.get(_PLANNER_EVENT_KEY):
+        return False
+
+    st.session_state[_PLANNER_EVENT_KEY] = event_id
+
+    try:
+        next_batch = _action_batch_from_component_payload(
+            planner_event.get("actions"),
+            env.config.max_actions_per_step,
+        )
+    except ValueError as exc:
+        st.session_state[_STEP_ERROR_KEY] = f"Planner error: {exc}"
+        return True
+
+    st.session_state[_ACTION_BATCH_KEY] = next_batch
+    st.session_state[_STEP_ERROR_KEY] = None
+
+    event_type = str(planner_event.get("event_type", "plan_change")).strip().lower()
+    if event_type == "submit":
+        _submit_batch()
+        return True
+    return True
+
+
+def _action_batch_from_component_payload(
+    payload: object,
+    max_actions_per_step: int,
+) -> list[Action]:
+    """Map the component payload back into validated Python Action objects."""
+    if payload is None:
+        return []
+    if not isinstance(payload, list):
+        raise ValueError("Action payload must be a list of planned actions.")
+
+    batch: list[Action] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            raise ValueError("Each planned action must be an object.")
+        action = _action_from_component_payload(item)
+        batch = _append_action_to_batch(batch, action, max_actions_per_step)
+
+    return batch
+
+
+def _action_from_component_payload(payload: dict[str, object]) -> Action:
+    """Create one Python Action from the custom component payload."""
+    action_type_raw = payload.get("action_type")
+    if not isinstance(action_type_raw, str):
+        raise ValueError("Each planned action must include an action_type.")
+    action_type = ActionType(action_type_raw)
+
+    ticker_value = payload.get("ticker")
+    ticker = ticker_value.strip() if isinstance(ticker_value, str) and ticker_value.strip() else None
+
+    quantity_type_raw = payload.get("quantity_type")
+    quantity_type = (
+        None
+        if quantity_type_raw in (None, "")
+        else QuantityType(str(quantity_type_raw))
+    )
+
+    quantity_raw = payload.get("quantity")
+    quantity = None if quantity_raw in (None, "") else float(quantity_raw)
+
+    fraction_raw = payload.get("fraction")
+    fraction = None if fraction_raw in (None, "") else float(fraction_raw)
+
+    stop_price_raw = payload.get("stop_price")
+    stop_price = None if stop_price_raw in (None, "") else float(stop_price_raw)
+
+    return Action(
+        action_type=action_type,
+        ticker=ticker,
+        quantity=quantity,
+        quantity_type=quantity_type,
+        fraction=fraction,
+        stop_price=stop_price,
+    )
+
+
 def _augment_step_info(
     *,
     previous_state: PortfolioState,
@@ -488,6 +528,7 @@ def _initialize_session_state() -> None:
         _METRICS_KEY: None,
         _EXPORT_DIR_KEY: None,
         _STEP_ERROR_KEY: None,
+        _PLANNER_EVENT_KEY: None,
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
@@ -505,6 +546,7 @@ def _reset_ui_session() -> None:
         _METRICS_KEY,
         _EXPORT_DIR_KEY,
         _STEP_ERROR_KEY,
+        _PLANNER_EVENT_KEY,
     ):
         if key in st.session_state:
             del st.session_state[key]
