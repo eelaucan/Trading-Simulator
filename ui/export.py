@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, Sequence
 
 import pandas as pd
 
@@ -20,6 +20,8 @@ def export_session_results(
     status: SessionStatus,
     env: TradingEnvironment,
     metrics: SimulationMetrics,
+    agent_decision_log_df: pd.DataFrame | None = None,
+    agent_decision_records: Sequence[dict[str, Any]] | None = None,
     output_root: str | Path = "output/sessions",
 ) -> Path:
     """Write session metadata, metrics, and simulator logs to disk."""
@@ -39,6 +41,8 @@ def export_session_results(
     batch_log_jsonl_path = export_dir / "batch_log.jsonl"
     weekly_returns_path = export_dir / "weekly_returns.csv"
     manifest_path = export_dir / "manifest.json"
+    agent_decision_log_path = export_dir / "agent_decision_log.csv"
+    agent_decision_log_jsonl_path = export_dir / "agent_decision_log.jsonl"
 
     metadata_payload = metadata.to_dict()
     metadata_payload["status"] = status.value
@@ -56,6 +60,25 @@ def export_session_results(
             "weekly_return": metrics.weekly_returns.tolist(),
         }
     ).to_csv(weekly_returns_path, index=False)
+    if agent_decision_log_df is not None:
+        agent_decision_log_df.to_csv(agent_decision_log_path, index=False)
+    if agent_decision_records is not None:
+        _write_jsonl(agent_decision_log_jsonl_path, agent_decision_records)
+
+    files_payload = {
+        "session_metadata": metadata_path.name,
+        "metrics": metrics_path.name,
+        "action_log": action_log_path.name,
+        "validation_log": validation_log_path.name,
+        "execution_log": execution_log_path.name,
+        "batch_log_csv": batch_log_csv_path.name,
+        "batch_log_jsonl": batch_log_jsonl_path.name,
+        "weekly_returns": weekly_returns_path.name,
+    }
+    if agent_decision_log_df is not None:
+        files_payload["agent_decision_log_csv"] = agent_decision_log_path.name
+    if agent_decision_records is not None:
+        files_payload["agent_decision_log_jsonl"] = agent_decision_log_jsonl_path.name
 
     manifest_payload = {
         "participant_id": metadata.participant_id,
@@ -66,16 +89,7 @@ def export_session_results(
         "visible_history_weeks_at_start": metadata.visible_history_weeks_at_start,
         "finished_at": metadata.finished_at.isoformat() if metadata.finished_at else None,
         "status": status.value,
-        "files": {
-            "session_metadata": metadata_path.name,
-            "metrics": metrics_path.name,
-            "action_log": action_log_path.name,
-            "validation_log": validation_log_path.name,
-            "execution_log": execution_log_path.name,
-            "batch_log_csv": batch_log_csv_path.name,
-            "batch_log_jsonl": batch_log_jsonl_path.name,
-            "weekly_returns": weekly_returns_path.name,
-        },
+        "files": files_payload,
     }
     _write_json(manifest_path, manifest_payload)
     return export_dir
@@ -112,6 +126,23 @@ def _metrics_to_json(metrics: SimulationMetrics) -> dict[str, Any]:
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _write_jsonl(path: Path, records: Sequence[dict[str, Any]]) -> None:
+    with path.open("w", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(json.dumps(_json_ready(record), sort_keys=True))
+            handle.write("\n")
+
+
+def _json_ready(value: Any) -> Any:
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {str(key): _json_ready(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_ready(item) for item in value]
+    return value
 
 
 def _slugify(value: str) -> str:
