@@ -629,17 +629,28 @@ def render_session_setup(
         default_dataset_index = dataset_options.index(default_dataset_path)
 
     with st.form(f"{key_prefix}_form"):
+        run_mode = st.selectbox(
+            "Run Mode",
+            options=["human", "ai_benchmark"],
+            format_func=lambda value: "Human" if value == "human" else "AI Benchmark",
+            key=f"{key_prefix}_run_mode",
+        )
         participant_id = st.text_input(
             "Participant Code",
+            value="benchmark_agent" if run_mode == "ai_benchmark" else "",
             key=f"{key_prefix}_participant_id",
             help="Use a short identifier for this person or pilot session.",
         )
-        condition = st.selectbox(
-            "Session Type",
-            options=list(SUPPORTED_CONDITIONS),
-            format_func=condition_display_label,
-            key=f"{key_prefix}_condition",
-        )
+        if run_mode == "human":
+            condition = st.selectbox(
+                "Session Type",
+                options=[value for value in SUPPORTED_CONDITIONS if value != "ai_benchmark"],
+                format_func=condition_display_label,
+                key=f"{key_prefix}_condition",
+            )
+        else:
+            condition = "ai_benchmark"
+            st.caption("The backend benchmark agent will complete the full episode automatically.")
         episode_name = st.text_input(
             "Episode Name",
             value=default_episode_name,
@@ -673,7 +684,8 @@ def render_session_setup(
             key=f"{key_prefix}_notes",
             help="Optional researcher notes for this local session.",
         )
-        submitted = st.form_submit_button("Start Session", type="primary")
+        submit_label = "Run AI Benchmark" if run_mode == "ai_benchmark" else "Start Session"
+        submitted = st.form_submit_button(submit_label, type="primary")
 
     if not submitted:
         return None
@@ -681,6 +693,7 @@ def render_session_setup(
     return {
         "participant_id": participant_id,
         "condition": condition,
+        "run_mode": run_mode,
         "episode_name": episode_name,
         "dataset_path": dataset_path,
         "notes": notes,

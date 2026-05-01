@@ -19,6 +19,8 @@ except ImportError as exc:  # pragma: no cover - runtime-only dependency message
         "Streamlit is required to run the UI. Install it with `pip install streamlit`."
     ) from exc
 
+from agents.benchmark_agent import AutonomousBenchmarkAgent
+from agents.runner import AgentRunResult, run_benchmark_agent
 from simulator.actions import Action, ActionType, QuantityType
 from simulator.config import SimulatorConfig
 from simulator.env import TradingEnvironment
@@ -61,6 +63,11 @@ _METRICS_KEY = "ui_metrics"
 _EXPORT_DIR_KEY = "ui_export_dir"
 _STEP_ERROR_KEY = "ui_step_error"
 _PLANNER_EVENT_KEY = "ui_trade_planner_event_id"
+_AGENT_KEY = "ui_autonomous_agent"
+_RUN_MODE_KEY = "ui_run_mode"
+_AI_RESULT_KEY = "ui_ai_result"
+_AI_DECISION_LOG_KEY = "ui_ai_decision_log"
+_AI_EXPORT_PATHS_KEY = "ui_ai_export_paths"
 
 
 def main() -> None:
@@ -74,6 +81,7 @@ def main() -> None:
     _initialize_session_state()
 
     status = st.session_state[_STATUS_KEY]
+    run_mode = st.session_state.get(_RUN_MODE_KEY, "human")
     if status == SessionStatus.NOT_STARTED:
         _render_setup_screen()
         return
@@ -84,12 +92,37 @@ def main() -> None:
         st.rerun()
         return
 
-    _render_sidebar(metadata, status)
+    _render_sidebar(metadata, status, run_mode)
 
-    observation = st.session_state[_OBS_KEY]
     state = st.session_state[_STATE_KEY]
     env = st.session_state[_ENV_KEY]
-    if observation is None or state is None or env is None:
+    metrics = st.session_state[_METRICS_KEY]
+    if state is None or env is None:
+        _reset_ui_session()
+        st.rerun()
+        return
+
+    if run_mode == "ai_benchmark":
+        st.title("AI Benchmark Simulation")
+        st.caption(
+            "The autonomous benchmark completed the episode in the backend using the simulator environment."
+        )
+        if metrics is None:
+            metrics = env.get_metrics()
+            st.session_state[_METRICS_KEY] = metrics
+        _render_ai_finished_screen(
+            metadata=metadata,
+            result=st.session_state.get(_AI_RESULT_KEY),
+            env=env,
+            state=state,
+            metrics=metrics,
+            decision_log=st.session_state.get(_AI_DECISION_LOG_KEY),
+            export_paths=st.session_state.get(_AI_EXPORT_PATHS_KEY) or {},
+        )
+        return
+
+    observation = st.session_state[_OBS_KEY]
+    if observation is None:
         _reset_ui_session()
         st.rerun()
         return
@@ -114,7 +147,6 @@ def main() -> None:
         )
         return
 
-    metrics = st.session_state[_METRICS_KEY]
     if metrics is None:
         metrics = env.get_metrics()
         st.session_state[_METRICS_KEY] = metrics
@@ -124,9 +156,9 @@ def main() -> None:
         env,
         state,
         metrics,
+        agent=st.session_state.get(_AGENT_KEY),
         last_step_info=st.session_state[_LAST_STEP_INFO_KEY],
     )
-
 
 def _render_setup_screen() -> None:
     detected_datasets = _discover_datasets()
@@ -139,45 +171,131 @@ def _render_setup_screen() -> None:
     if submitted is None:
         return
 
+    run_mode = str(submitted.get("run_mode", "human"))
     try:
-        dataset_path = _resolve_dataset_path(submitted["dataset_path"])
-        market = MarketReplay(dataset_path)
-        config = SimulatorConfig(ticker_universe=market.available_tickers)
-        env = TradingEnvironment(market=market, config=config)
-        observation, state = env.reset()
-        started_at = datetime.now().astimezone()
-        visible_history_weeks = _visible_history_weeks(observation)
-        metadata = SessionMetadata(
-            participant_id=submitted["participant_id"],
-            condition=submitted["condition"],
-            episode_name=submitted["episode_name"],
-            dataset_path=str(dataset_path),
-            started_at=started_at,
-            decision_start_week=env.initial_decision_week,
-            visible_history_weeks_at_start=visible_history_weeks,
-            notes=submitted["notes"] or None,
-        )
+        if run_mode == "ai_benchmark":
+            _start_ai_session(submitted)
+        else:
+            _start_human_session(submitted)
     except Exception as exc:  # pragma: no cover - UI error path
         st.error(f"Unable to start the session: {exc}")
         return
 
-    session_status = SessionStatus.FINISHED if env.done else SessionStatus.RUNNING
-    st.session_state[_STATUS_KEY] = session_status
-    st.session_state[_METADATA_KEY] = (
-        metadata.mark_finished(started_at) if session_status == SessionStatus.FINISHED else metadata
+    st.rerun()
+
+
+def _start_human_session(submitted: dict[str, str]) -> None:
+    """Create a normal interactive human session."""
+    dataset_path = _resolve_dataset_path(submitted["dataset_path"])
+    market = MarketReplay(dataset_path)
+    config = SimulatorConfig(ticker_universe=market.available_tickers)
+    env = TradingEnvironment(market=market, config=config)
+    observation, state = env.reset()
+    started_at = datetime.now().astimezone()
+    metadata = SessionMetadata(
+        participant_id=submitted["participant_id"],
+        condition=submitted["condition"],
+        episode_name=submitted["episode_name"],
+        dataset_path=str(dataset_path),
+        started_at=started_at,
+        decision_start_week=env.initial_decision_week,
+        visible_history_weeks_at_start=_visible_history_weeks(observation),
+        notes=submitted["notes"] or None,
     )
+    session_status = SessionStatus.FINISHED if env.done else SessionStatus.RUNNING
+    metrics = None
+    if session_status == SessionStatus.FINISHED:
+        metadata = metadata.mark_finished(started_at)
+        metrics = env.get_metrics()
+
+    _store_common_session_state(
+        run_mode="human",
+        status=session_status,
+        metadata=metadata,
+        env=env,
+        observation=observation,
+        state=state,
+        metrics=metrics,
+    )
+    st.session_state[_AI_RESULT_KEY] = None
+    st.session_state[_AI_DECISION_LOG_KEY] = None
+    st.session_state[_AI_EXPORT_PATHS_KEY] = {}
+    st.session_state[_AGENT_KEY] = None
+
+
+def _start_ai_session(submitted: dict[str, str]) -> None:
+    """Run a completed autonomous benchmark episode in the backend."""
+    dataset_path = _resolve_dataset_path(submitted["dataset_path"])
+    started_at = datetime.now().astimezone()
+    output_prefix = _ai_output_prefix(submitted, started_at)
+    output_dir = PROJECT_ROOT / "output" / "ai_benchmark"
+
+    with st.spinner("Running the AI benchmark episode..."):
+        result = run_benchmark_agent(
+            data_path=dataset_path,
+            output_dir=output_dir,
+            output_prefix=output_prefix,
+        )
+
+    metadata = SessionMetadata(
+        participant_id=submitted["participant_id"],
+        condition="ai_benchmark",
+        episode_name=submitted["episode_name"],
+        dataset_path=str(dataset_path),
+        started_at=started_at,
+        decision_start_week=result.env.initial_decision_week,
+        visible_history_weeks_at_start=_visible_history_weeks(result.initial_observation),
+        notes=submitted["notes"] or None,
+    ).mark_finished(datetime.now().astimezone())
+    decision_log = result.agent.to_decision_dataframe()
+
+    _store_common_session_state(
+        run_mode="ai_benchmark",
+        status=SessionStatus.FINISHED,
+        metadata=metadata,
+        env=result.env,
+        observation=None,
+        state=result.final_state,
+        metrics=result.metrics,
+    )
+    st.session_state[_AI_RESULT_KEY] = result
+    st.session_state[_AI_DECISION_LOG_KEY] = decision_log
+    st.session_state[_AI_EXPORT_PATHS_KEY] = result.output_paths
+    st.session_state[_AGENT_KEY] = result.agent
+
+
+def _store_common_session_state(
+    *,
+    run_mode: str,
+    status: SessionStatus,
+    metadata: SessionMetadata,
+    env: TradingEnvironment,
+    observation: Observation | None,
+    state: PortfolioState,
+    metrics: SimulationMetrics | None,
+) -> None:
+    """Store session state shared by human and AI startup paths."""
+    st.session_state[_RUN_MODE_KEY] = run_mode
+    st.session_state[_STATUS_KEY] = status
+    st.session_state[_METADATA_KEY] = metadata
     st.session_state[_ENV_KEY] = env
     st.session_state[_OBS_KEY] = observation
     st.session_state[_STATE_KEY] = state
     st.session_state[_ACTION_BATCH_KEY] = []
     st.session_state[_LAST_STEP_INFO_KEY] = None
-    st.session_state[_METRICS_KEY] = env.get_metrics() if session_status == SessionStatus.FINISHED else None
+    st.session_state[_METRICS_KEY] = metrics
     st.session_state[_EXPORT_DIR_KEY] = None
-    st.rerun()
+    st.session_state[_STEP_ERROR_KEY] = None
+    st.session_state[_PLANNER_EVENT_KEY] = None
 
 
-def _render_sidebar(metadata: SessionMetadata, status: SessionStatus) -> None:
+def _render_sidebar(
+    metadata: SessionMetadata,
+    status: SessionStatus,
+    run_mode: str,
+) -> None:
     with st.sidebar:
+        run_mode_label = _run_mode_label(run_mode)
         st.markdown(
             (
                 "<div class='sidebar-card'>"
@@ -187,6 +305,8 @@ def _render_sidebar(metadata: SessionMetadata, status: SessionStatus) -> None:
                 f"<span class='sidebar-value'>{html.escape(metadata.participant_id)}</span></div>"
                 "<div class='sidebar-row'><span class='sidebar-label'>Session type</span>"
                 f"<span class='sidebar-value'>{html.escape(condition_display_label(metadata.condition))}</span></div>"
+                "<div class='sidebar-row'><span class='sidebar-label'>Run mode</span>"
+                f"<span class='sidebar-value'>{html.escape(run_mode_label)}</span></div>"
                 "<div class='sidebar-row'><span class='sidebar-label'>Episode</span>"
                 f"<span class='sidebar-value'>{html.escape(metadata.episode_name)}</span></div>"
                 "<div class='sidebar-row'><span class='sidebar-label'>Dataset</span>"
@@ -284,6 +404,7 @@ def _render_finished_screen(
     env: TradingEnvironment,
     state: PortfolioState,
     metrics: SimulationMetrics,
+    agent: AutonomousBenchmarkAgent | None,
     last_step_info: dict[str, object] | None,
 ) -> None:
     if last_step_info:
@@ -295,9 +416,19 @@ def _render_finished_screen(
         metrics=metrics,
         export_path=st.session_state[_EXPORT_DIR_KEY],
     )
-    _render_export_controls(metadata, env, metrics)
+    st.divider()
+    render_section_header(
+        "Final portfolio review",
+        "Equity path, ending allocation, and holdings available for comparison.",
+    )
+    render_portfolio_insight_panel(state)
+    render_holdings_panel(state)
+    _render_export_controls(metadata, env, metrics, agent)
     with st.expander("Detailed research logs (optional)", expanded=False):
-        log_tabs = st.tabs(["Action Log", "Batch Log", "Validation Log", "Execution Log"])
+        tab_names = ["Action Log", "Batch Log", "Validation Log", "Execution Log"]
+        if agent is not None:
+            tab_names.append("AI Decision Log")
+        log_tabs = st.tabs(tab_names)
         with log_tabs[0]:
             st.dataframe(env.logger.to_action_dataframe(include_internal=True), use_container_width=True)
         with log_tabs[1]:
@@ -306,12 +437,78 @@ def _render_finished_screen(
             st.dataframe(metrics.validation_log_df, use_container_width=True)
         with log_tabs[3]:
             st.dataframe(metrics.execution_log_df, use_container_width=True)
+        if agent is not None:
+            with log_tabs[4]:
+                st.dataframe(agent.to_decision_dataframe(), use_container_width=True)
+
+
+def _render_ai_finished_screen(
+    *,
+    metadata: SessionMetadata,
+    result: AgentRunResult | None,
+    env: TradingEnvironment,
+    state: PortfolioState,
+    metrics: SimulationMetrics,
+    decision_log: object | None,
+    export_paths: dict[str, Path],
+) -> None:
+    """Render completed autonomous benchmark outputs without the human planner."""
+    agent = result.agent if result is not None else st.session_state.get(_AGENT_KEY)
+    if decision_log is None and agent is not None:
+        decision_log = agent.to_decision_dataframe()
+
+    render_final_summary(
+        metadata=metadata,
+        state=state,
+        metrics=metrics,
+        export_path=st.session_state[_EXPORT_DIR_KEY],
+    )
+
+    st.divider()
+    render_section_header(
+        "AI portfolio review",
+        "Completed autonomous trajectory, ending allocation, and final holdings.",
+    )
+    render_portfolio_insight_panel(state)
+    render_holdings_panel(state)
+
+    if export_paths:
+        st.markdown("**Benchmark output files**")
+        st.dataframe(
+            [
+                {"Output": label, "Path": str(path)}
+                for label, path in sorted(export_paths.items())
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    _render_export_controls(metadata, env, metrics, agent)
+
+    with st.expander("Detailed AI and simulator logs", expanded=True):
+        log_tabs = st.tabs(
+            ["AI Decision Log", "Action Log", "Batch Log", "Validation Log", "Execution Log"]
+        )
+        with log_tabs[0]:
+            if decision_log is not None:
+                st.dataframe(decision_log, use_container_width=True)
+            else:
+                st.info("No AI decision log is available for this run.")
+        with log_tabs[1]:
+            st.dataframe(env.logger.to_action_dataframe(include_internal=True), use_container_width=True)
+        with log_tabs[2]:
+            st.dataframe(env.logger.to_batch_dataframe(), use_container_width=True)
+        with log_tabs[3]:
+            st.dataframe(metrics.validation_log_df, use_container_width=True)
+        with log_tabs[4]:
+            st.dataframe(metrics.execution_log_df, use_container_width=True)
 
 
 def _render_export_controls(
     metadata: SessionMetadata,
     env: TradingEnvironment,
     metrics: SimulationMetrics,
+    agent: AutonomousBenchmarkAgent | None,
 ) -> None:
     st.subheader("Save research files")
     st.caption(
@@ -323,6 +520,10 @@ def _render_export_controls(
             status=SessionStatus.FINISHED,
             env=env,
             metrics=metrics,
+            agent_decision_log_df=(
+                agent.to_decision_dataframe() if agent is not None else None
+            ),
+            agent_decision_records=agent.decision_records if agent is not None else None,
             output_root=PROJECT_ROOT / "output" / "sessions",
         )
         st.session_state[_EXPORT_DIR_KEY] = str(export_dir)
@@ -519,6 +720,7 @@ def _format_share_count(value: float) -> str:
 def _initialize_session_state() -> None:
     defaults = {
         _STATUS_KEY: SessionStatus.NOT_STARTED,
+        _RUN_MODE_KEY: "human",
         _METADATA_KEY: None,
         _ENV_KEY: None,
         _OBS_KEY: None,
@@ -529,6 +731,10 @@ def _initialize_session_state() -> None:
         _EXPORT_DIR_KEY: None,
         _STEP_ERROR_KEY: None,
         _PLANNER_EVENT_KEY: None,
+        _AGENT_KEY: None,
+        _AI_RESULT_KEY: None,
+        _AI_DECISION_LOG_KEY: None,
+        _AI_EXPORT_PATHS_KEY: {},
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
@@ -537,6 +743,7 @@ def _initialize_session_state() -> None:
 def _reset_ui_session() -> None:
     for key in (
         _STATUS_KEY,
+        _RUN_MODE_KEY,
         _METADATA_KEY,
         _ENV_KEY,
         _OBS_KEY,
@@ -547,6 +754,10 @@ def _reset_ui_session() -> None:
         _EXPORT_DIR_KEY,
         _STEP_ERROR_KEY,
         _PLANNER_EVENT_KEY,
+        _AGENT_KEY,
+        _AI_RESULT_KEY,
+        _AI_DECISION_LOG_KEY,
+        _AI_EXPORT_PATHS_KEY,
     ):
         if key in st.session_state:
             del st.session_state[key]
@@ -577,6 +788,24 @@ def _visible_history_weeks(observation: Observation) -> int:
     if "_week_idx" in history.columns:
         return int(history["_week_idx"].nunique())
     return int(history["date"].nunique())
+
+
+def _run_mode_label(run_mode: str) -> str:
+    if run_mode == "ai_benchmark":
+        return "AI Benchmark"
+    return "Human"
+
+
+def _ai_output_prefix(submitted: dict[str, str], started_at: datetime) -> str:
+    participant = _safe_file_token(submitted.get("participant_id", "benchmark_agent"))
+    episode = _safe_file_token(submitted.get("episode_name", "episode"))
+    timestamp = started_at.strftime("%Y%m%dT%H%M%S")
+    return f"{participant}_{episode}_{timestamp}"
+
+
+def _safe_file_token(value: str) -> str:
+    cleaned = "".join(char if char.isalnum() or char in "._-" else "_" for char in value.strip())
+    return cleaned or "benchmark_agent"
 
 
 if __name__ == "__main__":

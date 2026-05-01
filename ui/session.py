@@ -10,10 +10,12 @@ from enum import Enum
 SUPPORTED_CONDITIONS: tuple[str, ...] = (
     "human_only",
     "human_with_coach_placeholder",
+    "ai_benchmark",
 )
 CONDITION_LABELS: dict[str, str] = {
     "human_only": "Human Only",
     "human_with_coach_placeholder": "Human + Coach Placeholder",
+    "ai_benchmark": "AI Benchmark",
 }
 
 
