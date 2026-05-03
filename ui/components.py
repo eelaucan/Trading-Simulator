@@ -63,12 +63,13 @@ class PlanImpactPreview:
 
 
 def apply_ui_theme() -> None:
-    """Apply the participant-facing Streamlit typography and layout theme."""
+    """Apply dark professional trading terminal theme."""
     st.markdown(
         """
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         html, body, [class*="st-"], [data-testid="stMarkdownContainer"] *, label, input, textarea, select {
-            font-family: "Times New Roman", Times, serif !important;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
         }
         span.material-symbols-rounded,
         span.material-symbols-outlined,
@@ -79,432 +80,392 @@ def apply_ui_theme() -> None:
             font-family: "Material Symbols Rounded", "Material Symbols Outlined", "Material Icons" !important;
             font-weight: normal !important;
             font-style: normal !important;
-            -webkit-font-feature-settings: "liga";
-            font-feature-settings: "liga";
         }
         .stApp {
-            background: linear-gradient(180deg, #faf7f2 0%, #f4ede3 100%);
-            color: #231b14;
+            background: #0b0e14;
+            color: #e2e8f0;
         }
         .main .block-container {
-            max-width: 1380px;
-            padding-top: 1.5rem;
-            padding-bottom: 3.25rem;
+            max-width: 1420px;
+            padding-top: 1.2rem;
+            padding-bottom: 2rem;
         }
         h1, h2, h3, h4 {
-            color: #231b14;
-            letter-spacing: 0.01em;
-            margin-bottom: 0.25rem;
+            color: #f1f5f9;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.2rem;
         }
-        h1 {
-            font-size: 2.55rem;
-            font-weight: 700;
-        }
-        h2 {
-            font-size: 1.65rem;
-            font-weight: 700;
-        }
-        h3 {
-            font-size: 1.12rem;
-            font-weight: 700;
-        }
-        p, li, div, span {
-            color: #46392d;
-            line-height: 1.55;
-        }
+        h1 { font-size: 1.75rem; font-weight: 700; }
+        h2 { font-size: 1.3rem; font-weight: 600; }
+        h3 { font-size: 1.05rem; font-weight: 600; }
+        p, li, div, span { color: #94a3b8; line-height: 1.5; }
+
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #f1ebe2 0%, #ece3d7 100%);
-            border-left: 1px solid #dacdbc;
-            min-width: 290px !important;
-            max-width: 290px !important;
+            background: #0f1219;
+            border-right: 1px solid #1e293b;
+            min-width: 280px !important;
+            max-width: 280px !important;
         }
         [data-testid="stSidebar"] .block-container {
             padding-top: 1rem;
-            padding-left: 0.9rem;
-            padding-right: 0.9rem;
+            padding-left: 0.8rem;
+            padding-right: 0.8rem;
         }
+
         [data-testid="stMetric"] {
-            background: rgba(255, 255, 255, 0.82);
-            border: 1px solid #ddd1c2;
-            border-radius: 18px;
-            padding: 0.95rem 1rem;
-            box-shadow: 0 14px 32px rgba(85, 65, 45, 0.06);
-            min-height: 118px;
+            background: #141a24;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 0.75rem 0.85rem;
+            min-height: auto;
         }
         [data-testid="stMetricLabel"] {
-            color: #766557;
-            font-size: 0.85rem;
-            line-height: 1.22;
-            letter-spacing: 0.01em;
-            text-transform: none;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             white-space: normal !important;
             overflow: visible !important;
             text-overflow: unset !important;
         }
         [data-testid="stMetricValue"] {
-            color: #211912;
-            font-size: 1.78rem;
-            line-height: 1.1;
+            color: #f1f5f9;
+            font-size: 1.35rem;
+            font-weight: 600;
+            line-height: 1.2;
         }
-        [data-testid="stMetricDelta"] {
-            font-size: 0.95rem;
-        }
+        [data-testid="stMetricDelta"] { font-size: 0.82rem; }
+
         div[data-testid="stForm"] {
-            background: rgba(255, 255, 255, 0.78);
-            border: 1px solid #ddd1c2;
-            border-radius: 22px;
-            padding: 1.2rem 1.2rem 0.8rem 1.2rem;
-            box-shadow: 0 12px 28px rgba(85, 65, 45, 0.05);
+            background: #141a24;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 1.2rem;
         }
         div[data-testid="stDataFrame"] {
-            border: 1px solid #e1d7ca;
-            border-radius: 18px;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.86);
+            background: #141a24;
         }
         div[data-baseweb="select"] > div,
         div[data-baseweb="input"] > div,
         div[data-baseweb="textarea"] > div,
         div[data-baseweb="base-input"] {
-            border-radius: 14px !important;
-            border: 1.5px solid #bca185 !important;
-            background: rgba(255, 252, 247, 0.98) !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6) !important;
+            border-radius: 8px !important;
+            border: 1px solid #334155 !important;
+            background: #0f1219 !important;
         }
         div[data-baseweb="select"] > div:focus-within,
         div[data-baseweb="input"] > div:focus-within,
         div[data-baseweb="textarea"] > div:focus-within,
         div[data-baseweb="base-input"]:focus-within {
-            border-color: #205b45 !important;
-            box-shadow: 0 0 0 2px rgba(32, 91, 69, 0.12) !important;
+            border-color: #22c55e !important;
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2) !important;
         }
         label p {
-            color: #251c14 !important;
-            font-weight: 700 !important;
-            letter-spacing: 0.01em;
+            color: #cbd5e1 !important;
+            font-weight: 500 !important;
+            font-size: 0.85rem !important;
         }
         .stButton > button {
-            border-radius: 999px;
-            border: 1px solid #8c6d4c;
-            background: linear-gradient(180deg, #fffdf9 0%, #efe2cd 100%);
-            color: #211911;
-            padding: 0.68rem 1.15rem;
-            min-height: 2.95rem;
-            font-weight: 700;
-            font-size: 0.98rem;
-            line-height: 1.2;
-            white-space: normal;
-            box-shadow: 0 12px 22px rgba(88, 62, 36, 0.11);
-            transition: all 0.16s ease;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            min-height: 2.5rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.12s ease;
         }
         .stButton > button:hover {
-            border-color: #205b45;
-            color: #205b45;
-            transform: translateY(-1px);
-            box-shadow: 0 14px 24px rgba(32, 91, 69, 0.14);
+            border-color: #22c55e;
+            color: #22c55e;
+            background: #1a2332;
         }
-        .stButton > button[kind="primary"] {
-            background: linear-gradient(180deg, #205b45 0%, #163f30 100%);
-            color: white;
-            border-color: #163f30;
-            box-shadow: 0 18px 30px rgba(22, 63, 48, 0.28);
+        .stButton > button[kind="primary"],
+        .stButton > button[kind="primary"] *,
+        .stFormSubmitButton > button,
+        .stFormSubmitButton > button * {
+            background: #22c55e !important;
+            color: #0b0e14 !important;
+            border-color: #22c55e !important;
+            font-weight: 700 !important;
         }
-        .stButton > button[kind="primary"]:hover {
-            color: white;
-            border-color: #163f30;
+        .stButton > button[kind="primary"]:hover,
+        .stButton > button[kind="primary"]:hover *,
+        .stFormSubmitButton > button:hover,
+        .stFormSubmitButton > button:hover * {
+            background: #16a34a !important;
+            color: #0b0e14 !important;
+            border-color: #16a34a !important;
         }
         [data-testid="stVerticalBlockBorderWrapper"] {
-            border-radius: 24px !important;
-            border: 1px solid #d3c0aa !important;
-            background: rgba(255, 253, 248, 0.74);
-            box-shadow: 0 18px 32px rgba(83, 61, 38, 0.08);
+            border-radius: 12px !important;
+            border: 1px solid #1e293b !important;
+            background: #141a24;
         }
+        hr { border-color: #1e293b !important; }
+        [data-testid="stExpander"] {
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            background: #141a24;
+        }
+
         .section-shell {
-            background: rgba(255, 255, 255, 0.76);
-            border: 1px solid #ddd2c4;
-            border-radius: 24px;
-            padding: 1rem 1.15rem 0.55rem 1.15rem;
-            margin: 0.3rem 0 1rem 0;
-            box-shadow: 0 14px 30px rgba(82, 63, 41, 0.06);
+            background: #141a24;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 0.75rem 1rem 0.5rem 1rem;
+            margin: 0.25rem 0 0.75rem 0;
         }
         .section-kicker {
             margin: 0;
-            font-size: 1.42rem;
-            font-weight: 700;
-            color: #201811;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f1f5f9;
         }
         .section-subtitle {
-            margin: 0.3rem 0 0.15rem 0;
-            color: #5f5042;
-            font-size: 0.98rem;
+            margin: 0.15rem 0 0 0;
+            color: #64748b;
+            font-size: 0.85rem;
         }
         .note-card {
-            border-radius: 16px;
-            border: 1px solid #ddd1c2;
-            background: rgba(255, 251, 245, 0.9);
-            padding: 0.75rem 0.9rem;
-            margin: 0.25rem 0 0.85rem 0;
-            color: #4b3d31;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+            background: #141a24;
+            padding: 0.6rem 0.8rem;
+            margin: 0.2rem 0 0.6rem 0;
+            color: #94a3b8;
+            font-size: 0.85rem;
         }
-        .note-card--quiet {
-            background: rgba(246, 241, 232, 0.92);
-        }
+        .note-card--quiet { background: #0f1219; }
+
         .sidebar-card {
-            border-radius: 18px;
-            border: 1px solid #d8c9b7;
-            background: rgba(255, 252, 247, 0.9);
-            padding: 0.9rem 0.95rem;
-            margin-bottom: 0.85rem;
-            box-shadow: 0 10px 22px rgba(77, 58, 37, 0.06);
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+            background: #141a24;
+            padding: 0.75rem 0.8rem;
+            margin-bottom: 0.6rem;
         }
         .sidebar-eyebrow {
             margin: 0 0 0.3rem 0;
-            color: #7a6553;
-            font-size: 0.75rem;
+            color: #64748b;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-weight: 700;
+            letter-spacing: 0.1em;
+            font-weight: 600;
         }
         .sidebar-status-pill {
             display: inline-block;
-            padding: 0.28rem 0.72rem;
-            border-radius: 999px;
-            background: rgba(32, 91, 69, 0.1);
-            border: 1px solid rgba(32, 91, 69, 0.18);
-            color: #174735;
-            font-size: 0.84rem;
-            font-weight: 700;
-            margin-bottom: 0.6rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
         .sidebar-row {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.6rem;
-            margin: 0.34rem 0;
+            align-items: center;
+            gap: 0.4rem;
+            margin: 0.25rem 0;
         }
-        .sidebar-label {
-            color: #776454;
-            font-size: 0.85rem;
-        }
+        .sidebar-label { color: #64748b; font-size: 0.78rem; }
         .sidebar-value {
-            color: #231b14;
-            font-size: 0.92rem;
-            font-weight: 700;
+            color: #e2e8f0;
+            font-size: 0.78rem;
+            font-weight: 600;
             text-align: right;
             word-break: break-word;
         }
+
         .empty-plan-card {
-            border-radius: 18px;
-            border: 1px dashed #cdbfae;
-            background: rgba(250, 247, 242, 0.96);
-            padding: 0.95rem 1rem;
-            margin: 0.3rem 0 0.85rem 0;
+            border-radius: 8px;
+            border: 1px dashed #334155;
+            background: #0f1219;
+            padding: 0.75rem 0.85rem;
+            margin: 0.25rem 0 0.6rem 0;
         }
-        .empty-plan-title {
-            font-weight: 700;
-            color: #2b221a;
-            margin-bottom: 0.2rem;
-        }
-        .empty-plan-copy {
-            color: #635548;
-            margin: 0;
-        }
+        .empty-plan-title { font-weight: 600; color: #94a3b8; margin-bottom: 0.15rem; }
+        .empty-plan-copy { color: #64748b; margin: 0; font-size: 0.85rem; }
+
         .insight-chip {
             display: inline-block;
-            margin: 0 0.45rem 0.45rem 0;
-            padding: 0.28rem 0.72rem;
-            border-radius: 999px;
-            border: 1px solid #d9cdbe;
-            background: rgba(255, 255, 255, 0.9);
-            color: #4a3d31;
-            font-size: 0.92rem;
+            margin: 0 0.3rem 0.3rem 0;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 500;
         }
-        .insight-chip--good {
-            background: #edf7ef;
-            border-color: #bfdec6;
-            color: #1b6b39;
-        }
-        .insight-chip--warn {
-            background: #fff6e8;
-            border-color: #e6cf98;
-            color: #8a5b00;
-        }
-        .insight-chip--risk {
-            background: #fdf1f1;
-            border-color: #e7c1c1;
-            color: #a53a3a;
-        }
-        .insight-chip--neutral {
-            background: #f3f4f6;
-            border-color: #d7dbe0;
-            color: #525866;
-        }
+        .insight-chip--good { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.2); color: #4ade80; }
+        .insight-chip--warn { background: rgba(234,179,8,0.1); border-color: rgba(234,179,8,0.2); color: #facc15; }
+        .insight-chip--risk { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171; }
+        .insight-chip--neutral { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
         .feedback-card {
-            border-radius: 18px;
-            padding: 0.85rem 1rem;
-            margin: 0.15rem 0 0.65rem 0;
-            background: rgba(255, 255, 255, 0.88);
-            border: 1px solid #ddd2c4;
-            box-shadow: 0 10px 24px rgba(83, 63, 42, 0.05);
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+            margin: 0.1rem 0 0.5rem 0;
+            background: #141a24;
+            border: 1px solid #1e293b;
         }
-        .feedback-card--success { border-left: 5px solid #3a8f61; }
-        .feedback-card--warning { border-left: 5px solid #c7871d; }
-        .feedback-card--error { border-left: 5px solid #c64e4e; }
-        .feedback-card--neutral { border-left: 5px solid #8c7d6f; }
-        .feedback-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #241c14;
-            margin-bottom: 0.35rem;
-        }
-        .feedback-card ul {
-            margin: 0.2rem 0 0 1rem;
-            padding: 0;
-        }
-        .feedback-card li {
-            margin: 0.2rem 0;
-            color: #4a3c30;
-        }
-        .micro-copy {
-            color: #6b5d51;
-            font-size: 0.93rem;
-            margin-top: 0.2rem;
-        }
+        .feedback-card--success { border-left: 3px solid #22c55e; }
+        .feedback-card--warning { border-left: 3px solid #eab308; }
+        .feedback-card--error { border-left: 3px solid #ef4444; }
+        .feedback-card--neutral { border-left: 3px solid #64748b; }
+        .feedback-title { font-size: 0.85rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.25rem; }
+        .feedback-card ul { margin: 0.15rem 0 0 1rem; padding: 0; }
+        .feedback-card li { margin: 0.15rem 0; color: #94a3b8; font-size: 0.82rem; }
+
+        .micro-copy { color: #64748b; font-size: 0.8rem; margin-top: 0.15rem; }
+
         .trade-ticket-shell {
-            background: linear-gradient(180deg, rgba(29, 36, 34, 0.98) 0%, rgba(39, 47, 44, 0.98) 100%);
-            border: 1px solid #3d5a4e;
-            border-radius: 24px;
-            padding: 1.05rem 1.1rem 0.85rem 1.1rem;
-            margin-bottom: 0.9rem;
-            box-shadow: 0 18px 34px rgba(27, 31, 30, 0.18);
+            background: #141a24;
+            border: 1px solid #22c55e33;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.6rem;
         }
         .trade-ticket-kicker {
-            color: #d7c5ad;
+            color: #22c55e;
             text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 0.82rem;
-            margin: 0 0 0.25rem 0;
-            font-weight: 700;
+            letter-spacing: 0.08em;
+            font-size: 0.7rem;
+            margin: 0 0 0.2rem 0;
+            font-weight: 600;
         }
-        .trade-ticket-title {
-            color: #fffdf8;
-            font-size: 1.58rem;
-            font-weight: 700;
-            margin: 0;
-            line-height: 1.2;
-        }
-        .trade-ticket-subtitle {
-            color: #e7dccd;
-            margin: 0.35rem 0 0 0;
-            font-size: 0.98rem;
-            line-height: 1.45;
-        }
+        .trade-ticket-title { color: #f1f5f9; font-size: 1.15rem; font-weight: 600; margin: 0; }
+        .trade-ticket-subtitle { color: #94a3b8; margin: 0.2rem 0 0 0; font-size: 0.85rem; }
         .trade-ticket-status {
             display: inline-block;
-            margin: 0.7rem 0 0 0;
-            padding: 0.34rem 0.8rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(231, 220, 205, 0.25);
-            color: #f7f1e9;
-            font-size: 0.9rem;
-            font-weight: 700;
+            margin: 0.5rem 0 0 0;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 600;
         }
         .trade-step-pill {
             display: inline-block;
-            margin: 0.5rem 0.4rem 0 0;
-            padding: 0.28rem 0.68rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(218, 202, 182, 0.22);
-            color: #f7f2ea;
-            font-size: 0.88rem;
+            margin: 0.35rem 0.3rem 0 0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 0.75rem;
         }
         .trade-ticket-note {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(215, 197, 173, 0.2);
-            border-radius: 16px;
-            color: #eee3d5;
-            padding: 0.72rem 0.82rem;
-            margin: 0.65rem 0 0.3rem 0;
-            line-height: 1.45;
+            background: #0f1219;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            color: #64748b;
+            padding: 0.55rem 0.7rem;
+            margin: 0.5rem 0 0.2rem 0;
+            font-size: 0.82rem;
         }
+
         .review-ticket-shell {
-            background: linear-gradient(180deg, rgba(255, 251, 245, 0.98) 0%, rgba(247, 241, 232, 0.98) 100%);
-            border: 1px solid #d1b594;
-            border-radius: 24px;
-            padding: 1rem 1.05rem 0.8rem 1.05rem;
-            margin-bottom: 0.9rem;
-            box-shadow: 0 16px 28px rgba(90, 66, 40, 0.08);
+            background: #141a24;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.6rem;
         }
         .review-ticket-kicker {
-            color: #7f6041;
+            color: #64748b;
             text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 0.82rem;
-            margin: 0 0 0.25rem 0;
-            font-weight: 700;
+            letter-spacing: 0.08em;
+            font-size: 0.7rem;
+            margin: 0 0 0.2rem 0;
+            font-weight: 600;
         }
-        .review-ticket-title {
-            color: #2b221a;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin: 0 0 0.15rem 0;
-        }
-        .review-ticket-subtitle {
-            color: #675748;
-            margin: 0;
-            font-size: 0.95rem;
-            line-height: 1.45;
-        }
+        .review-ticket-title { color: #f1f5f9; font-size: 1.05rem; font-weight: 600; margin: 0; }
+        .review-ticket-subtitle { color: #94a3b8; margin: 0; font-size: 0.85rem; }
         .review-ticket-status {
             display: inline-block;
-            margin: 0.65rem 0 0 0;
-            padding: 0.34rem 0.78rem;
-            border-radius: 999px;
-            background: rgba(32, 91, 69, 0.08);
-            border: 1px solid rgba(32, 91, 69, 0.15);
-            color: #174735;
-            font-size: 0.9rem;
-            font-weight: 700;
+            margin: 0.5rem 0 0 0;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.2);
+            color: #22c55e;
+            font-size: 0.78rem;
+            font-weight: 600;
         }
         .review-step-pill {
             display: inline-block;
-            margin: 0.5rem 0.4rem 0 0;
-            padding: 0.28rem 0.68rem;
-            border-radius: 999px;
-            background: rgba(32, 91, 69, 0.08);
-            border: 1px solid rgba(32, 91, 69, 0.15);
-            color: #174735;
-            font-size: 0.88rem;
-            font-weight: 700;
+            margin: 0.35rem 0.3rem 0 0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            background: rgba(34,197,94,0.06);
+            border: 1px solid rgba(34,197,94,0.15);
+            color: #4ade80;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
         .plan-row-card {
-            border-radius: 18px;
-            border: 1px solid #dcccb9;
-            background: rgba(255, 252, 247, 0.94);
-            padding: 0.82rem 0.95rem;
-            margin-bottom: 0.65rem;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+            background: #0f1219;
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.4rem;
         }
         .plan-row-index {
-            color: #7c6653;
-            font-size: 0.76rem;
+            color: #64748b;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
         }
-        .plan-row-title {
-            color: #221a13;
-            font-size: 1rem;
-            font-weight: 700;
-            line-height: 1.3;
+        .plan-row-title { color: #e2e8f0; font-size: 0.88rem; font-weight: 600; }
+        .plan-row-caption { color: #64748b; font-size: 0.78rem; margin-top: 0.15rem; }
+
+        [data-testid="stCaptionContainer"] p {
+            color: #475569 !important;
+            font-size: 0.78rem !important;
         }
-        .plan-row-caption {
-            color: #66584b;
-            font-size: 0.9rem;
-            margin-top: 0.28rem;
+        [data-testid="stTabs"] [data-baseweb="tab-list"] {
+            gap: 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        [data-testid="stTabs"] [data-baseweb="tab"] {
+            background: transparent;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            font-size: 0.82rem;
+        }
+        [data-testid="stTabs"] [data-baseweb="tab"][aria-selected="true"] {
+            color: #22c55e;
+            border-bottom-color: #22c55e;
+        }
+        .stSelectbox label, .stTextInput label, .stNumberInput label, .stTextArea label {
+            font-size: 0.82rem !important;
+        }
+        button[kind="primary"] p,
+        button[kind="primary"] span,
+        button[kind="primary"] div,
+        [data-testid="stFormSubmitButton"] button p,
+        [data-testid="stFormSubmitButton"] button span,
+        [data-testid="stFormSubmitButton"] button div,
+        [data-testid="baseButton-primary"] p,
+        [data-testid="baseButton-primary"] span,
+        [data-testid="baseButton-primaryFormSubmit"] p,
+        [data-testid="baseButton-primaryFormSubmit"] span {
+            color: #0b0e14 !important;
         }
         </style>
         """,
@@ -612,15 +573,10 @@ def render_session_setup(
     key_prefix: str = "session_setup",
 ) -> dict[str, str] | None:
     """Render the initial participant-facing setup form."""
-    st.title("Guided Historical Trading Session")
-    st.markdown(
-        "You will make one weekly investment decision using only the information that would have "
-        "been visible at that time."
-    )
-    render_note_card(
-        "The session does not begin at the raw first week of the dataset. Instead, it starts "
-        "after enough earlier history has accumulated so your first decision already has context.",
-        quiet=True,
+    st.title("Trading Simulator")
+    st.caption(
+        "Make weekly investment decisions using only information visible at that point in time. "
+        "The session starts after enough history has accumulated for context."
     )
 
     dataset_options = list(detected_datasets)
@@ -705,20 +661,12 @@ def render_session_bar(
     observation: Observation,
 ) -> None:
     """Render the participant's always-visible session summary bar."""
-    bar_cols = st.columns([1.0, 1.1, 1.35, 0.8, 1.0], gap="small")
+    bar_cols = st.columns(5, gap="small")
     bar_cols[0].metric("Participant", metadata.participant_id)
-    bar_cols[1].metric("Session type", condition_display_label(metadata.condition))
+    bar_cols[1].metric("Mode", condition_display_label(metadata.condition))
     bar_cols[2].metric("Episode", metadata.episode_name)
     bar_cols[3].metric("Week", observation.week_index + 1)
     bar_cols[4].metric("Date", observation.date.strftime("%Y-%m-%d"))
-    st.markdown(
-        "<p class='micro-copy'>"
-        "This episode began at week "
-        f"{metadata.decision_start_week + 1} with {metadata.visible_history_weeks_at_start} visible "
-        "week(s) already available."
-        "</p>",
-        unsafe_allow_html=True,
-    )
 
 
 def render_market_panel(
@@ -752,38 +700,18 @@ def render_market_panel(
     if selected_row is not None:
         current_close = float(selected_row["close"])
 
-    insight_cols = st.columns([1.7, 1.0], gap="large")
+    insight_cols = st.columns([1.7, 1.0], gap="medium")
     with insight_cols[0]:
-        st.markdown("**Selected stock snapshot**")
-        summary_cols = st.columns(5)
-        summary_cols[0].metric("Selected Stock", selected_ticker)
-        summary_cols[1].metric(
-            "Current Close",
-            _currency(current_close) if current_close is not None else "N/A",
-        )
-        if current_close is not None and previous_close is not None:
-            summary_cols[1].markdown(
-                _price_change_badge_html(current_close - previous_close),
-                unsafe_allow_html=True,
-            )
-            summary_cols[1].caption("vs previous visible close")
-        else:
-            summary_cols[1].caption("No earlier visible close is visible yet.")
+        summary_cols = st.columns(4, gap="small")
+        summary_cols[0].metric("Close", _currency(current_close) if current_close is not None else "N/A")
+        summary_cols[1].metric("Open", _currency(float(selected_row["open"])) if selected_row is not None else "N/A")
         summary_cols[2].metric(
-            "This Week's Open",
-            _currency(float(selected_row["open"])) if selected_row is not None else "N/A",
+            "Range",
+            f"{_currency(float(selected_row['low']))} - {_currency(float(selected_row['high']))}" if selected_row is not None else "N/A",
         )
-        summary_cols[3].metric(
-            "This Week's Range",
-            (
-                f"{_currency(float(selected_row['low']))} to {_currency(float(selected_row['high']))}"
-                if selected_row is not None
-                else "N/A"
-            ),
-        )
-        summary_cols[4].metric("Visible History", f"{history_weeks_visible} week(s)")
-
-        st.markdown("**Recent visible price history**")
+        summary_cols[3].metric("History", f"{history_weeks_visible}w")
+        if current_close is not None and previous_close is not None:
+            st.markdown(_price_change_badge_html(current_close - previous_close), unsafe_allow_html=True)
         if len(ticker_history) >= 2:
             st.altair_chart(
                 _market_history_chart(ticker_history, selected_ticker),
@@ -804,23 +732,18 @@ def render_market_panel(
         )
 
     with insight_cols[1]:
-        st.markdown("**Trend so far**")
         market_chips = _market_insight_chips(ticker_history)
         render_insight_chips(market_chips)
-        render_note_card(_market_context_summary(ticker_history, selected_ticker), quiet=True)
 
         if current_close is not None and previous_close is not None and previous_close > _EPSILON:
             st.metric(
-                "Move vs previous visible close",
+                "Weekly change",
                 _pct((current_close / previous_close) - 1.0),
                 delta=_signed_currency_text(current_close - previous_close),
             )
-        elif current_close is not None:
-            st.metric("Move vs previous visible close", "N/A")
 
         if len(ticker_history) >= 2:
             recent_slice = ticker_history.tail(min(8, len(ticker_history)))
-            st.markdown("**Weekly close changes in the recent visible window**")
             st.altair_chart(
                 _recent_change_chart(recent_slice),
                 use_container_width=True,
@@ -862,15 +785,11 @@ def render_financial_status_panel(state: PortfolioState) -> None:
     invested_amount = max(0.0, float(state.total_nav - state.cash))
     holdings_count = sum(1 for shares in state.shares_dict().values() if shares > _EPSILON)
 
-    summary_cols = st.columns(4)
-    summary_cols[0].metric("Cash available", _currency(state.cash))
-    summary_cols[1].metric("Currently invested", _currency(invested_amount))
-    summary_cols[2].metric("Portfolio value", _currency(state.total_nav))
-    summary_cols[3].metric("Open holdings", str(holdings_count))
-    st.caption(
-        "Cash available now is the money not currently invested. Currently invested is the value "
-        "already sitting in stock positions."
-    )
+    summary_cols = st.columns(4, gap="small")
+    summary_cols[0].metric("Cash", _currency(state.cash))
+    summary_cols[1].metric("Invested", _currency(invested_amount))
+    summary_cols[2].metric("NAV", _currency(state.total_nav))
+    summary_cols[3].metric("Positions", str(holdings_count))
 
 
 def render_holdings_panel(state: PortfolioState) -> None:
@@ -912,9 +831,9 @@ def render_portfolio_insight_panel(state: PortfolioState) -> None:
     nav_frame = _nav_history_frame(state)
     insight_chips = _portfolio_insight_chips(state)
 
-    top_cols = st.columns([1.25, 0.95], gap="large")
+    top_cols = st.columns([1.3, 0.95], gap="medium")
     with top_cols[0]:
-        st.markdown("**Portfolio value so far**")
+        st.markdown("**Equity curve**")
         if len(nav_frame) >= 2:
             st.altair_chart(
                 _portfolio_value_chart(nav_frame, initial_nav=float(state.nav_history[0])),
@@ -927,10 +846,8 @@ def render_portfolio_insight_panel(state: PortfolioState) -> None:
             )
 
     with top_cols[1]:
-        st.markdown("**Portfolio reading**")
         render_insight_chips(insight_chips)
-        render_note_card(_portfolio_context_summary(state), quiet=True)
-        st.markdown("**Current portfolio mix**")
+        st.markdown("**Allocation**")
         st.altair_chart(_allocation_chart(state), use_container_width=True)
 
     st.markdown("**Drawdown so far**")
@@ -951,16 +868,12 @@ def render_portfolio_panel(state: PortfolioState) -> None:
 
 def render_risk_panel(state: PortfolioState) -> None:
     """Render the current portfolio risk snapshot in plain language."""
-    risk_cols = st.columns(3)
-    risk_cols[0].metric("Concentration (HHI)", f"{state.concentration_hhi:.4f}")
-    risk_cols[1].metric("This week's turnover", _pct(state.weekly_turnover))
+    risk_cols = st.columns(3, gap="small")
+    risk_cols[0].metric("HHI", f"{state.concentration_hhi:.4f}")
+    risk_cols[1].metric("Turnover", _pct(state.weekly_turnover))
     risk_cols[2].metric(
-        "Portfolio Volatility",
-        "Not available yet" if state.portfolio_volatility is None else _pct(state.portfolio_volatility),
-    )
-    st.caption(
-        "The simulator tracks concentration, turnover, and portfolio volatility because later "
-        "actions can be clipped or rejected if they break hard rules."
+        "Volatility",
+        "N/A" if state.portfolio_volatility is None else _pct(state.portfolio_volatility),
     )
 
 
@@ -1415,12 +1328,9 @@ def render_step_feedback(step_info: dict[str, Any] | None) -> None:
     if not step_info:
         return
 
-    render_section_header(
-        "What changed after your last decision",
-        "A concise view of how the simulator handled the previous weekly plan.",
-    )
+    render_section_header("Execution Report", "Results from your last submission")
 
-    summary_cols = st.columns(4)
+    summary_cols = st.columns(4, gap="small")
     cash_before = float(step_info.get("cash_before", 0.0))
     cash_after = float(step_info.get("cash_after", 0.0))
     invested_before = float(step_info.get("invested_before", 0.0))
@@ -1430,30 +1340,10 @@ def render_step_feedback(step_info: dict[str, Any] | None) -> None:
     holdings_before = int(step_info.get("holdings_before_count", 0))
     holdings_after = int(step_info.get("holdings_after_count", 0))
 
-    summary_cols[0].metric(
-        "Cash available now",
-        _currency(cash_after),
-        delta=_signed_currency_text(cash_after - cash_before),
-    )
-    summary_cols[0].caption(f"Before: {_currency(cash_before)}")
-    summary_cols[1].metric(
-        "Currently invested",
-        _currency(invested_after),
-        delta=_signed_currency_text(invested_after - invested_before),
-    )
-    summary_cols[1].caption(f"Before: {_currency(invested_before)}")
-    summary_cols[2].metric(
-        "Total portfolio value",
-        _currency(total_nav_after),
-        delta=_signed_currency_text(total_nav_after - total_nav_before),
-    )
-    summary_cols[2].caption(f"Before: {_currency(total_nav_before)}")
-    summary_cols[3].metric(
-        "Number of holdings",
-        str(holdings_after),
-        delta=_signed_number_text(holdings_after - holdings_before),
-    )
-    summary_cols[3].caption(f"Before: {holdings_before}")
+    summary_cols[0].metric("Cash", _currency(cash_after), delta=_signed_currency_text(cash_after - cash_before))
+    summary_cols[1].metric("Invested", _currency(invested_after), delta=_signed_currency_text(invested_after - invested_before))
+    summary_cols[2].metric("NAV", _currency(total_nav_after), delta=_signed_currency_text(total_nav_after - total_nav_before))
+    summary_cols[3].metric("Positions", str(holdings_after), delta=_signed_number_text(holdings_after - holdings_before))
 
     if step_info.get("n_actions_submitted", 0) == 0:
         render_note_card(
@@ -1943,13 +1833,13 @@ def _market_history_chart(ticker_history: pd.DataFrame, ticker: str) -> alt.Char
             ],
         )
     )
-    line = base.mark_line(color="#6a533d", strokeWidth=3)
-    points = base.mark_circle(color="#6a533d", size=48)
+    line = base.mark_line(color="#22c55e", strokeWidth=2)
+    points = base.mark_circle(color="#22c55e", size=30)
     return (
         (line + points)
-        .properties(height=280)
+        .properties(height=260)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
+        .configure_axis(labelColor="#64748b", titleColor="#94a3b8", gridColor="#1e293b")
     )
 
 
@@ -1970,7 +1860,7 @@ def _recent_change_chart(recent_slice: pd.DataFrame) -> alt.Chart:
                 "direction:N",
                 scale=alt.Scale(
                     domain=["Positive", "Negative", "Flat"],
-                    range=["#4d8b63", "#b8554e", "#8b7f73"],
+                    range=["#22c55e", "#ef4444", "#475569"],
                 ),
                 legend=None,
             ),
@@ -1979,9 +1869,9 @@ def _recent_change_chart(recent_slice: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("weekly_change:Q", title="Weekly Change", format=".2%"),
             ],
         )
-        .properties(height=190)
+        .properties(height=180)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
+        .configure_axis(labelColor="#64748b", titleColor="#94a3b8", gridColor="#1e293b")
     )
 
 
@@ -2063,17 +1953,17 @@ def _portfolio_value_chart(nav_frame: pd.DataFrame, initial_nav: float) -> alt.C
             alt.Tooltip("nav:Q", title="Portfolio Value", format=",.2f"),
         ],
     )
-    line = base.mark_line(color="#6a533d", strokeWidth=3)
-    points = base.mark_circle(color="#6a533d", size=42)
+    line = base.mark_line(color="#22c55e", strokeWidth=2)
+    points = base.mark_circle(color="#22c55e", size=30)
     baseline = alt.Chart(pd.DataFrame({"initial_nav": [initial_nav]})).mark_rule(
-        color="#b7a592",
+        color="#475569",
         strokeDash=[5, 5],
     ).encode(y="initial_nav:Q")
     return (
         (line + points + baseline)
-        .properties(height=250)
+        .properties(height=230)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
+        .configure_axis(labelColor="#64748b", titleColor="#94a3b8", gridColor="#1e293b")
     )
 
 
@@ -2081,7 +1971,7 @@ def _drawdown_chart(nav_frame: pd.DataFrame) -> alt.Chart:
     chart_frame = nav_frame.copy()
     return (
         alt.Chart(chart_frame)
-        .mark_area(color="#d6b186", line={"color": "#aa7d4b"})
+        .mark_area(color="#ef444433", line={"color": "#ef4444"})
         .encode(
             x=alt.X("decision_step:Q", title="Decision Step"),
             y=alt.Y("drawdown:Q", title="Drawdown", axis=alt.Axis(format=".0%")),
@@ -2090,9 +1980,9 @@ def _drawdown_chart(nav_frame: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("drawdown:Q", title="Drawdown", format=".2%"),
             ],
         )
-        .properties(height=210)
+        .properties(height=180)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
+        .configure_axis(labelColor="#64748b", titleColor="#94a3b8", gridColor="#1e293b")
     )
 
 
@@ -2103,7 +1993,6 @@ def _allocation_chart(state: PortfolioState) -> alt.Chart:
             "segment": "Cash",
             "value": float(state.cash),
             "weight": float(state.cash / state.total_nav) if state.total_nav > _EPSILON else 0.0,
-            "type": "Cash",
         }
     ]
     for ticker, value in sorted(market_values.items()):
@@ -2112,31 +2001,79 @@ def _allocation_chart(state: PortfolioState) -> alt.Chart:
                 "segment": ticker,
                 "value": float(value),
                 "weight": float(value / state.total_nav) if state.total_nav > _EPSILON else 0.0,
-                "type": "Holding",
             }
         )
     allocation_frame = pd.DataFrame(allocation_rows)
+    palette = ["#475569"] + _PIE_COLORS[: len(allocation_rows) - 1]
     return (
         alt.Chart(allocation_frame)
-        .mark_bar(cornerRadiusEnd=8)
+        .mark_arc(innerRadius=50, stroke="#0b0e14", strokeWidth=2)
         .encode(
-            y=alt.Y("segment:N", title=None, sort="-x"),
-            x=alt.X("weight:Q", title="Share of Current Portfolio", axis=alt.Axis(format=".0%")),
+            theta=alt.Theta("weight:Q", stack=True),
             color=alt.Color(
-                "type:N",
-                scale=alt.Scale(domain=["Cash", "Holding"], range=["#c7ae90", "#6a533d"]),
-                legend=None,
+                "segment:N",
+                scale=alt.Scale(domain=[r["segment"] for r in allocation_rows], range=palette),
+                legend=alt.Legend(title=None, labelColor="#94a3b8", orient="bottom", columns=4),
             ),
             tooltip=[
                 alt.Tooltip("segment:N", title="Segment"),
                 alt.Tooltip("value:Q", title="Value", format=",.2f"),
-                alt.Tooltip("weight:Q", title="Weight", format=".2%"),
+                alt.Tooltip("weight:Q", title="Weight", format=".1%"),
             ],
         )
-        .properties(height=max(150, 40 * len(allocation_rows)))
+        .properties(height=200, width=200)
         .configure_view(strokeOpacity=0)
-        .configure_axis(labelColor="#5d4f42", titleColor="#5d4f42", gridColor="#e8dfd1")
     )
+
+
+_PIE_COLORS = [
+    "#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6",
+    "#ec4899", "#14b8a6", "#f97316", "#06b6d4", "#84cc16",
+    "#e879f9", "#fbbf24", "#34d399", "#fb7185", "#a78bfa",
+]
+
+
+def render_portfolio_pie_chart(state: PortfolioState) -> None:
+    """Render a pie chart of portfolio holdings when positions exist."""
+    market_values = state.market_value_dict()
+    holdings = {t: v for t, v in market_values.items() if v > _EPSILON}
+    if not holdings:
+        return
+
+    rows = []
+    for ticker, value in sorted(holdings.items()):
+        rows.append({
+            "ticker": ticker,
+            "value": float(value),
+            "weight": float(value / state.total_nav) if state.total_nav > _EPSILON else 0.0,
+        })
+    rows.append({
+        "ticker": "Cash",
+        "value": float(state.cash),
+        "weight": float(state.cash / state.total_nav) if state.total_nav > _EPSILON else 0.0,
+    })
+    df = pd.DataFrame(rows)
+    palette = _PIE_COLORS[: len(rows) - 1] + ["#475569"]
+    chart = (
+        alt.Chart(df)
+        .mark_arc(innerRadius=45, stroke="#0b0e14", strokeWidth=2)
+        .encode(
+            theta=alt.Theta("weight:Q", stack=True),
+            color=alt.Color(
+                "ticker:N",
+                scale=alt.Scale(domain=[r["ticker"] for r in rows], range=palette),
+                legend=alt.Legend(title=None, labelColor="#94a3b8", orient="bottom", columns=4),
+            ),
+            tooltip=[
+                alt.Tooltip("ticker:N", title="Stock"),
+                alt.Tooltip("value:Q", title="Value", format=",.2f"),
+                alt.Tooltip("weight:Q", title="Weight", format=".1%"),
+            ],
+        )
+        .properties(height=220, width=220)
+        .configure_view(strokeOpacity=0)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 
 def _portfolio_insight_chips(state: PortfolioState) -> list[tuple[str, str]]:
@@ -2313,16 +2250,16 @@ def _pct(value: float) -> str:
 def _price_change_badge_html(change: float) -> str:
     if change > _EPSILON:
         arrow = "↑"
-        text_color = "#0f6b2b"
-        background_color = "#eaf7ee"
+        text_color = "#4ade80"
+        background_color = "rgba(34,197,94,0.1)"
     elif change < -_EPSILON:
         arrow = "↓"
-        text_color = "#b42318"
-        background_color = "#fef3f2"
+        text_color = "#f87171"
+        background_color = "rgba(239,68,68,0.1)"
     else:
         arrow = "→"
-        text_color = "#475467"
-        background_color = "#f2f4f7"
+        text_color = "#94a3b8"
+        background_color = "#1e293b"
 
     value_text = f"{arrow} {_currency(abs(change))}"
     return (
