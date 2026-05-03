@@ -38,6 +38,7 @@ from ui.components import (
     render_market_panel,
     render_pending_liquidations_panel,
     render_portfolio_insight_panel,
+    render_portfolio_pie_chart,
     render_risk_panel,
     render_section_header,
     render_session_bar,
@@ -127,12 +128,11 @@ def main() -> None:
         st.rerun()
         return
 
-    st.title("Historical Trading Session")
+    st.title("Trading Session")
     if status == SessionStatus.RUNNING:
-        st.caption("Review the current week, assess your portfolio, and decide what should carry into next week's open.")
         render_session_bar(metadata, observation)
     else:
-        st.caption("This session is complete. You can review the final summary and save the research files.")
+        st.caption("Session complete. Review the summary below.")
 
     if st.session_state[_STEP_ERROR_KEY]:
         st.error(st.session_state[_STEP_ERROR_KEY])
@@ -340,33 +340,25 @@ def _render_running_screen(
     state: PortfolioState,
     last_step_info: dict[str, object] | None,
 ) -> None:
-    render_section_header(
-        "This week’s market context",
-        "Visible market information up to the end of the current week.",
-    )
+    render_section_header("Market", "Current week visible data")
     render_market_panel(observation, key_prefix="market")
 
     st.divider()
-    render_section_header(
-        "Your portfolio now",
-        "Current cash, invested capital, portfolio path, and position mix.",
-    )
+    render_section_header("Portfolio", "Current positions, allocation, and performance")
     render_financial_status_panel(state)
     render_portfolio_insight_panel(state)
 
-    st.subheader("Current holdings")
+    st.markdown("**Holdings**")
     holdings_cols = st.columns([1.35, 1.0], gap="medium")
     with holdings_cols[0]:
         render_holdings_panel(state)
+        render_portfolio_pie_chart(state)
     with holdings_cols[1]:
         render_risk_panel(state)
         render_pending_liquidations_panel(observation.pending_liquidations)
 
     st.divider()
-    render_section_header(
-        "Build this week’s plan",
-        "Place your decision for next week’s open, then review the plan before you submit.",
-    )
+    render_section_header("Trade Planner", "Build and submit your weekly decisions")
 
     current_batch = list(st.session_state[_ACTION_BATCH_KEY])
     planner_props = build_trade_planner_props(
@@ -422,7 +414,11 @@ def _render_finished_screen(
         "Equity path, ending allocation, and holdings available for comparison.",
     )
     render_portfolio_insight_panel(state)
-    render_holdings_panel(state)
+    holdings_finish_cols = st.columns([1.4, 0.8], gap="medium")
+    with holdings_finish_cols[0]:
+        render_holdings_panel(state)
+    with holdings_finish_cols[1]:
+        render_portfolio_pie_chart(state)
     _render_export_controls(metadata, env, metrics, agent)
     with st.expander("Detailed research logs (optional)", expanded=False):
         tab_names = ["Action Log", "Batch Log", "Validation Log", "Execution Log"]
@@ -470,7 +466,11 @@ def _render_ai_finished_screen(
         "Completed autonomous trajectory, ending allocation, and final holdings.",
     )
     render_portfolio_insight_panel(state)
-    render_holdings_panel(state)
+    ai_holdings_cols = st.columns([1.4, 0.8], gap="medium")
+    with ai_holdings_cols[0]:
+        render_holdings_panel(state)
+    with ai_holdings_cols[1]:
+        render_portfolio_pie_chart(state)
 
     if export_paths:
         st.markdown("**Benchmark output files**")
