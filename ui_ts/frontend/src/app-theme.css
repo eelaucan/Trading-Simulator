@@ -172,7 +172,220 @@ button, input, select, textarea {
 .data-table th { color: var(--app-dim); font-weight: 600; }
 .data-table td { color: var(--app-muted); }
 
-.form-card { padding: 1.2rem; max-width: 760px; }
+.form-card { padding: 1.2rem; }
+
+/* ── Setup landing page ── */
+.setup-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 20%, rgba(34, 197, 94, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(56, 189, 248, 0.04) 0%, transparent 55%),
+    var(--app-bg);
+}
+
+.setup-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+  gap: 3rem;
+  width: 100%;
+  max-width: 1100px;
+  align-items: center;
+}
+
+.setup-hero {
+  padding: 0.5rem 0;
+}
+
+.setup-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: var(--app-green);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.setup-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--app-green);
+  box-shadow: 0 0 8px var(--app-green);
+}
+
+.setup-title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 1rem;
+  color: var(--app-ink);
+}
+
+.setup-title span {
+  color: var(--app-green);
+}
+
+.setup-lead {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--app-muted);
+  margin: 0 0 2rem;
+  max-width: 520px;
+}
+
+.setup-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.setup-feature {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.setup-feature-icon {
+  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+}
+
+.setup-feature-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-ink);
+  margin: 0 0 0.2rem;
+}
+
+.setup-feature-desc {
+  font-size: 0.75rem;
+  color: var(--app-dim);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.setup-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.setup-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--app-ink);
+  letter-spacing: -0.02em;
+}
+
+.setup-stat-label {
+  font-size: 0.72rem;
+  color: var(--app-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.1rem;
+}
+
+.setup-panel {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  padding: 1.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.setup-panel-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--app-border);
+}
+
+.setup-panel-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem;
+  color: var(--app-ink);
+}
+
+.setup-panel-subtitle {
+  font-size: 0.82rem;
+  color: var(--app-dim);
+  margin: 0;
+}
+
+.setup-form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.setup-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  background: var(--app-sidebar);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 0.3rem;
+}
+
+.mode-toggle label {
+  position: relative;
+  display: block;
+  text-align: center;
+  padding: 0.55rem 0.75rem;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin: 0;
+}
+
+.mode-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-toggle label:has(input:checked) {
+  background: var(--app-surface-raised);
+  color: var(--app-green);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.btn--launch {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  letter-spacing: 0.01em;
+}
+
+.btn--launch:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .form-grid {
   display: grid;
   gap: 0.85rem;
@@ -260,4 +473,7 @@ button, input, select, textarea {
   .app-shell { grid-template-columns: 1fr; }
   .app-sidebar { border-right: none; border-bottom: 1px solid var(--app-border); }
   .panel-grid-2, .session-bar { grid-template-columns: 1fr; }
+  .setup-layout { grid-template-columns: 1fr; gap: 2rem; }
+  .setup-features { grid-template-columns: 1fr; }
+  .setup-form-row { grid-template-columns: 1fr; }
 }

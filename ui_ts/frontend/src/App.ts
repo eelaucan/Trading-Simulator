@@ -73,64 +73,115 @@ export class TradingSimulatorApp {
   private renderSetup(): void {
     const defaultDataset = this.datasets[0]?.path ?? "data/sample/weekly_ohlcv_synthetic.csv";
     this.root.innerHTML = `
-      <div class="app-shell app-shell--setup">
-        <main class="app-main">
-          <h1 class="app-title">Trading Simulator</h1>
-          <p class="app-caption">
-            Make weekly investment decisions using only information visible at that point in time.
-            The session starts after enough history has accumulated for context.
-          </p>
-          <form class="form-card form-grid" id="setup-form">
-            <div class="form-field">
-              <label for="run_mode">Run Mode</label>
-              <select id="run_mode" name="run_mode">
-                <option value="human">Human</option>
-                <option value="ai_benchmark">AI Benchmark</option>
-              </select>
+      <div class="setup-page">
+        <div class="setup-layout">
+          <section class="setup-hero">
+            <div class="setup-eyebrow">Weekly Decision Environment</div>
+            <h1 class="setup-title">Trading<br /><span>Simulator</span></h1>
+            <p class="setup-lead">
+              Make investment decisions one week at a time using only information
+              visible at that point in history. No look-ahead. No hindsight.
+            </p>
+            <div class="setup-features">
+              <div class="setup-feature">
+                <div class="setup-feature-icon">◈</div>
+                <p class="setup-feature-title">No look-ahead</p>
+                <p class="setup-feature-desc">Prices and history are capped at the current decision week.</p>
+              </div>
+              <div class="setup-feature">
+                <div class="setup-feature-icon">◎</div>
+                <p class="setup-feature-title">Weekly decisions</p>
+                <p class="setup-feature-desc">Build a plan, review impact, then submit for next week's open.</p>
+              </div>
+              <div class="setup-feature">
+                <div class="setup-feature-icon">△</div>
+                <p class="setup-feature-title">Risk-aware rules</p>
+                <p class="setup-feature-desc">Concentration limits, stops, and turnover constraints apply live.</p>
+              </div>
             </div>
-            <div class="form-field">
-              <label for="participant_id">Participant Code</label>
-              <input id="participant_id" name="participant_id" placeholder="participant_01" />
+            <div class="setup-stats">
+              <div>
+                <div class="setup-stat-value">15</div>
+                <div class="setup-stat-label">Stocks</div>
+              </div>
+              <div>
+                <div class="setup-stat-value">Weekly</div>
+                <div class="setup-stat-label">Decision cadence</div>
+              </div>
+              <div>
+                <div class="setup-stat-value">$100k</div>
+                <div class="setup-stat-label">Starting NAV</div>
+              </div>
             </div>
-            <div class="form-field" id="condition-field">
-              <label for="condition">Session Type</label>
-              <select id="condition" name="condition">
-                <option value="human_only">Human Only</option>
-                <option value="human_with_coach_placeholder">Human + Coach Placeholder</option>
-              </select>
+          </section>
+
+          <section class="setup-panel">
+            <div class="setup-panel-header">
+              <h2 class="setup-panel-title">Configure session</h2>
+              <p class="setup-panel-subtitle">Set up your participant details and choose a dataset to begin.</p>
             </div>
-            <div class="form-field">
-              <label for="episode_name">Episode Name</label>
-              <input id="episode_name" name="episode_name" value="pilot_episode_01" />
-            </div>
-            <div class="form-field">
-              <label for="dataset_path">Dataset</label>
-              <select id="dataset_path" name="dataset_path">
-                ${this.datasets
-                  .map(
-                    (dataset) =>
-                      `<option value="${dataset.path}"${dataset.path === defaultDataset ? " selected" : ""}>${dataset.label}</option>`,
-                  )
-                  .join("")}
-              </select>
-            </div>
-            <div class="form-field">
-              <label for="notes">Notes (optional)</label>
-              <textarea id="notes" name="notes" rows="3"></textarea>
-            </div>
-            <button class="btn btn--primary" type="submit" ${this.loading ? "disabled" : ""}>
-              ${this.loading ? "Starting..." : "Start Session"}
-            </button>
-          </form>
-        </main>
+            <form class="setup-form-grid" id="setup-form">
+              <div class="form-field">
+                <label>Run mode</label>
+                <div class="mode-toggle" id="mode-toggle">
+                  <label>
+                    <input type="radio" name="run_mode" value="human" checked />
+                    Human trader
+                  </label>
+                  <label>
+                    <input type="radio" name="run_mode" value="ai_benchmark" />
+                    AI benchmark
+                  </label>
+                </div>
+              </div>
+              <div class="setup-form-row">
+                <div class="form-field">
+                  <label for="participant_id">Participant code</label>
+                  <input id="participant_id" name="participant_id" placeholder="participant_01" />
+                </div>
+                <div class="form-field">
+                  <label for="episode_name">Episode name</label>
+                  <input id="episode_name" name="episode_name" value="pilot_episode_01" />
+                </div>
+              </div>
+              <div class="form-field" id="condition-field">
+                <label for="condition">Session type</label>
+                <select id="condition" name="condition">
+                  <option value="human_only">Human only</option>
+                  <option value="human_with_coach_placeholder">Human + coach placeholder</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="dataset_path">Dataset</label>
+                <select id="dataset_path" name="dataset_path">
+                  ${this.datasets
+                    .map(
+                      (dataset) =>
+                        `<option value="${dataset.path}"${dataset.path === defaultDataset ? " selected" : ""}>${dataset.label}</option>`,
+                    )
+                    .join("")}
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="notes">Notes <span style="color:var(--app-dim);font-weight:400">(optional)</span></label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Researcher notes for this session…"></textarea>
+              </div>
+              <button class="btn btn--primary btn--launch btn--block" type="submit" ${this.loading ? "disabled" : ""}>
+                ${this.loading ? "Starting session…" : "Start session →"}
+              </button>
+            </form>
+          </section>
+        </div>
       </div>`;
 
     const form = this.root.querySelector<HTMLFormElement>("#setup-form");
-    const runMode = this.root.querySelector<HTMLSelectElement>("#run_mode");
     const conditionField = this.root.querySelector<HTMLDivElement>("#condition-field");
-    runMode?.addEventListener("change", () => {
-      if (!conditionField || !runMode) return;
-      conditionField.style.display = runMode.value === "ai_benchmark" ? "none" : "block";
+    form?.querySelectorAll<HTMLInputElement>('input[name="run_mode"]').forEach((input) => {
+      input.addEventListener("change", () => {
+        if (!conditionField) return;
+        const selected = form?.querySelector<HTMLInputElement>('input[name="run_mode"]:checked');
+        conditionField.style.display = selected?.value === "ai_benchmark" ? "none" : "block";
+      });
     });
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
