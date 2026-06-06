@@ -16,6 +16,23 @@ from .llm_actions import actions_from_llm_payload, extract_json_object
 from .llm_prompt import build_trading_prompt
 
 
+_DEPRECATED_GEMINI_MODELS: dict[str, str] = {
+    "gemini-2.0-flash": "gemini-2.5-flash",
+    "gemini-2.0-flash-001": "gemini-2.5-flash",
+    "gemini-2.0-flash-lite": "gemini-2.5-flash-lite",
+    "gemini-2.0-flash-lite-001": "gemini-2.5-flash-lite",
+}
+
+
+_DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+
+
+def resolve_gemini_model(requested: str | None) -> str:
+    """Map retired Gemini model IDs to currently supported replacements."""
+    normalized = (requested or _DEFAULT_GEMINI_MODEL).strip() or _DEFAULT_GEMINI_MODEL
+    return _DEPRECATED_GEMINI_MODELS.get(normalized, normalized)
+
+
 class GeminiClient(Protocol):
     def generate_json(self, *, prompt: str, model: str) -> dict[str, Any]:
         """Return a parsed JSON object from the model."""
@@ -23,7 +40,7 @@ class GeminiClient(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class GeminiAgentConfig:
-    model: str = "gemini-2.0-flash"
+    model: str = _DEFAULT_GEMINI_MODEL
     temperature: float = 0.2
     fallback_to_hold: bool = True
 
@@ -68,7 +85,27 @@ class HttpGeminiClient:
         gemini_model = self._genai.GenerativeModel(model)
         response = gemini_model.generate_content(prompt, generation_config=generation_config)
         text = getattr(response, "text", None) or ""
+        if not text.strip():
+            block_reason = _response_block_reason(response)
+            if block_reason:
+                raise ValueError(block_reason)
+            raise ValueError("Model response was empty.")
         return extract_json_object(text)
+
+
+def _response_block_reason(response: Any) -> str | None:
+    prompt_feedback = getattr(response, "prompt_feedback", None)
+    if prompt_feedback is not None:
+        block_reason = getattr(prompt_feedback, "block_reason", None)
+        if block_reason:
+            return f"Prompt blocked by Gemini safety filters: {block_reason}"
+
+    candidates = getattr(response, "candidates", None) or []
+    for candidate in candidates:
+        finish_reason = getattr(candidate, "finish_reason", None)
+        if finish_reason and str(finish_reason).upper() not in {"STOP", "FINISHREASON.STOP"}:
+            return f"Gemini stopped generation: {finish_reason}"
+    return None
 
 
 def build_gemini_client() -> GeminiClient:
@@ -102,7 +139,7 @@ class GeminiTradingAgent:
         prompt = build_trading_prompt(observation, self.simulator_config)
         client = self._client or build_gemini_client()
         raw_response = ""
-        model_name = os.environ.get("GEMINI_MODEL", self.config.model).strip() or self.config.model
+        model_name = resolve_gemini_model(os.environ.get("GEMINI_MODEL", self.config.model))
         try:
             payload = client.generate_json(prompt=prompt, model=model_name)
             raw_response = json.dumps(payload, sort_keys=True)

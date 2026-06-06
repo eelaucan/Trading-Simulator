@@ -439,6 +439,25 @@ export class TradingSimulatorApp {
         </div>
       </section>`;
     }
+    renderGeminiSummary(session) {
+        const summary = session.gemini_summary;
+        if (session.run_mode !== "ai_gemini" || !summary)
+            return "";
+        const allFallback = summary.fallback_weeks === summary.decisions && summary.decisions > 0;
+        return `
+      <section class="session-zone">
+        ${zoneHeader("Gemini decisions", "Weekly model calls and fallback status")}
+        <div class="panel-card ${allFallback ? "panel-card--warning" : ""}">
+          ${allFallback ? `<div class="alert alert--error">Gemini did not execute trades this session. Every week fell back to HOLD.${summary.last_error ? ` Last error: ${summary.last_error}` : ""}</div>` : ""}
+          ${metricGrid([
+            ["Decision weeks", String(summary.decisions)],
+            ["Weeks with trades", String(summary.trade_weeks)],
+            ["Fallback HOLD weeks", String(summary.fallback_weeks)],
+            ["Last error", summary.last_error ?? "None"],
+        ])}
+        </div>
+      </section>`;
+    }
     renderFinished() {
         const session = this.session;
         if (!session)
@@ -480,6 +499,8 @@ export class TradingSimulatorApp {
               </div>
             </div>
           </section>
+
+          ${this.renderGeminiSummary(session)}
 
           <section class="session-zone">
             ${zoneHeader("Results", "Research metrics for this session")}

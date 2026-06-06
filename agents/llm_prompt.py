@@ -43,10 +43,12 @@ def build_trading_prompt(observation: Observation, config: SimulatorConfig) -> s
     ]
 
     payload: dict[str, Any] = {
-        "task": (
+        "instructions": (
             "You are an autonomous long-only weekly trading agent. "
             "Use only the observation below. Do not assume future prices. "
-            "Return JSON with a short rationale and a list of simulator actions for this decision week."
+            "Respond with JSON only, using exactly two top-level keys: "
+            "'rationale' (string) and 'actions' (array). "
+            "Do not repeat the observation back."
         ),
         "decision_week": int(observation.week_index) + 1,
         "as_of": observation.date.isoformat(),

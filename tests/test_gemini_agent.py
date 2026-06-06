@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import pandas as pd
 import pytest
 
-from agents.gemini_agent import GeminiTradingAgent
+from agents.gemini_agent import GeminiTradingAgent, resolve_gemini_model
 from simulator.actions import ActionType
 from simulator.config import SimulatorConfig
 from simulator.observation import Observation
@@ -108,6 +108,10 @@ def test_gemini_agent_falls_back_to_hold_on_bad_payload() -> None:
     assert len(actions) == 1
     assert actions[0].action_type == ActionType.HOLD
     assert agent.decision_records[0]["used_fallback"] is True
+
+
+def test_resolve_gemini_model_maps_retired_flash_model() -> None:
+    assert resolve_gemini_model("gemini-2.0-flash") == "gemini-2.5-flash"
 
 
 def test_start_gemini_session_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -159,6 +159,7 @@ button, input, select, textarea {
 .panel-card { padding: 1rem 1.1rem; }
 .panel-card--compact { padding: 0.85rem 1rem; }
 .panel-card--spaced { margin-top: 0.85rem; }
+.panel-card--warning { border-color: rgba(239, 68, 68, 0.35); }
 
 .panel-label {
   margin: 0 0 0.65rem;

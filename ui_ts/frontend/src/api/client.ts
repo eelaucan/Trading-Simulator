@@ -89,6 +89,12 @@ export interface SessionResponse {
   error?: string | null;
   done: boolean;
   llm_decision_log?: Array<Record<string, unknown>>;
+  gemini_summary?: {
+    decisions: number;
+    fallback_weeks: number;
+    trade_weeks: number;
+    last_error: string | null;
+  };
 }
 
 export interface StartSessionInput {

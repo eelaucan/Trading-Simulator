@@ -321,6 +321,25 @@ def _response(runtime: RuntimeSession) -> dict[str, Any]:
         run_mode=runtime.run_mode,
     )
     body["session"] = encode_runtime(runtime)
+    if runtime.llm_decision_log:
+        body["llm_decision_log"] = list(runtime.llm_decision_log)
+        fallback_weeks = sum(
+            1 for record in runtime.llm_decision_log if record.get("used_fallback")
+        )
+        last_error = next(
+            (
+                str(record.get("error"))
+                for record in reversed(runtime.llm_decision_log)
+                if record.get("error")
+            ),
+            None,
+        )
+        body["gemini_summary"] = {
+            "decisions": len(runtime.llm_decision_log),
+            "fallback_weeks": fallback_weeks,
+            "trade_weeks": len(runtime.llm_decision_log) - fallback_weeks,
+            "last_error": last_error,
+        }
     return body
 
 
