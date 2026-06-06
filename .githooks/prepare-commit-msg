@@ -1,0 +1,4 @@
+#!/bin/sh
+# Remove co-author trailers so commits stay attributed to the repo owner only.
+tmp="${1}.clean"
+grep -viE '^Co-[Aa]uthored-[Bb]y:' "$1" > "$tmp" && mv "$tmp" "$1"
