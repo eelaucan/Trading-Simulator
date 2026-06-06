@@ -111,7 +111,8 @@ def test_gemini_agent_falls_back_to_hold_on_bad_payload() -> None:
 
 
 def test_resolve_gemini_model_maps_retired_flash_model() -> None:
-    assert resolve_gemini_model("gemini-2.0-flash") == "gemini-2.5-flash"
+    assert resolve_gemini_model("gemini-2.0-flash") == "gemini-2.5-flash-lite"
+    assert resolve_gemini_model(None) == "gemini-2.5-flash-lite"
 
 
 def test_start_gemini_session_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:

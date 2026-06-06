@@ -17,14 +17,16 @@ from .llm_prompt import build_trading_prompt
 
 
 _DEPRECATED_GEMINI_MODELS: dict[str, str] = {
-    "gemini-2.0-flash": "gemini-2.5-flash",
-    "gemini-2.0-flash-001": "gemini-2.5-flash",
+    "gemini-2.0-flash": "gemini-2.5-flash-lite",
+    "gemini-2.0-flash-001": "gemini-2.5-flash-lite",
     "gemini-2.0-flash-lite": "gemini-2.5-flash-lite",
     "gemini-2.0-flash-lite-001": "gemini-2.5-flash-lite",
+    "gemini-3.5-flash": "gemini-2.5-flash-lite",
+    "gemini-3-flash-preview": "gemini-2.5-flash-lite",
 }
 
 
-_DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+_DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
 
 
 def resolve_gemini_model(requested: str | None) -> str:
