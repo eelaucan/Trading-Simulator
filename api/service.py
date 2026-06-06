@@ -334,10 +334,14 @@ def _response(runtime: RuntimeSession) -> dict[str, Any]:
             ),
             None,
         )
+        signal_rescue_weeks = sum(
+            1 for record in runtime.llm_decision_log if record.get("decision_source") == "signal_rescue"
+        )
         body["gemini_summary"] = {
             "decisions": len(runtime.llm_decision_log),
             "fallback_weeks": fallback_weeks,
             "trade_weeks": len(runtime.llm_decision_log) - fallback_weeks,
+            "signal_rescue_weeks": signal_rescue_weeks,
             "last_error": last_error,
         }
     return body

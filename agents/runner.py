@@ -11,7 +11,6 @@ from typing import Any
 import pandas as pd
 
 from agents.benchmark_agent import AutonomousBenchmarkAgent, BenchmarkAgentConfig
-from agents.gemini_agent import GeminiTradingAgent
 from simulator.config import SimulatorConfig
 from simulator.env import TradingEnvironment
 from simulator.market import MarketReplay
@@ -78,6 +77,8 @@ def run_gemini_agent(
     output_prefix: str = "gemini_agent",
 ) -> AgentRunResult:
     """Build and run the Gemini-backed agent on a weekly OHLCV CSV."""
+    from agents.gemini_agent import GeminiTradingAgent
+
     market = MarketReplay(data_path)
     config = simulator_config or SimulatorConfig(
         initial_cash=100_000.0,

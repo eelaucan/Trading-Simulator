@@ -93,6 +93,7 @@ export interface SessionResponse {
     decisions: number;
     fallback_weeks: number;
     trade_weeks: number;
+    signal_rescue_weeks: number;
     last_error: string | null;
   };
 }

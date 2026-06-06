@@ -490,6 +490,7 @@ export class TradingSimulatorApp {
             ["Decision weeks", String(summary.decisions)],
             ["Weeks with trades", String(summary.trade_weeks)],
             ["Fallback HOLD weeks", String(summary.fallback_weeks)],
+            ["Signal rescue weeks", String(summary.signal_rescue_weeks ?? 0)],
             ["Last error", summary.last_error ?? "None"],
           ])}
         </div>

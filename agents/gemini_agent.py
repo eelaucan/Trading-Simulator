@@ -13,7 +13,9 @@ from simulator.config import SimulatorConfig
 from simulator.observation import Observation
 
 from .llm_actions import actions_from_llm_payload, extract_json_object
+from .llm_policy import apply_signal_rescue, should_apply_signal_rescue
 from .llm_prompt import build_trading_prompt
+from .llm_signals import build_signal_context
 
 
 _DEPRECATED_GEMINI_MODELS: dict[str, str] = {
@@ -56,11 +58,14 @@ class GeminiDecisionRecord:
     raw_response: str
     generated_actions: tuple[dict[str, Any], ...]
     used_fallback: bool
+    decision_source: str = "llm"
+    selected_focus: tuple[str, ...] = ()
     error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["date"] = self.date.isoformat()
+        payload["selected_focus"] = list(self.selected_focus)
         return payload
 
 
@@ -138,6 +143,7 @@ class GeminiTradingAgent:
         self._decision_records.clear()
 
     def decide(self, observation: Observation) -> list[Action]:
+        signal_context = build_signal_context(observation, self.simulator_config)
         prompt = build_trading_prompt(observation, self.simulator_config)
         client = self._client or build_gemini_client()
         raw_response = ""
@@ -149,6 +155,15 @@ class GeminiTradingAgent:
                 payload,
                 self.simulator_config.max_actions_per_step,
             )
+            decision_source = "llm"
+            if should_apply_signal_rescue(observation, actions, signal_context):
+                actions = apply_signal_rescue(observation, self.simulator_config)
+                rationale = (
+                    f"{rationale} Signal rescue applied after under-investment.".strip()
+                    if rationale
+                    else "Signal rescue applied after under-investment."
+                )
+                decision_source = "signal_rescue"
             self._record_decision(
                 observation=observation,
                 rationale=rationale,
@@ -156,9 +171,29 @@ class GeminiTradingAgent:
                 raw_response=raw_response,
                 model_name=model_name,
                 used_fallback=False,
+                decision_source=decision_source,
+                signal_context=signal_context,
             )
             return actions
         except Exception as exc:
+            if should_apply_signal_rescue(
+                observation,
+                [Action(action_type=ActionType.HOLD)],
+                signal_context,
+            ):
+                actions = apply_signal_rescue(observation, self.simulator_config)
+                self._record_decision(
+                    observation=observation,
+                    rationale="Signal rescue applied after model failure.",
+                    actions=actions,
+                    raw_response=raw_response,
+                    model_name=model_name,
+                    used_fallback=False,
+                    decision_source="signal_rescue",
+                    signal_context=signal_context,
+                    error=str(exc),
+                )
+                return actions
             if not self.config.fallback_to_hold:
                 raise
             hold = [Action(action_type=ActionType.HOLD)]
@@ -169,6 +204,8 @@ class GeminiTradingAgent:
                 raw_response=raw_response,
                 model_name=model_name,
                 used_fallback=True,
+                decision_source="fallback_hold",
+                signal_context=signal_context,
                 error=str(exc),
             )
             return hold
@@ -182,6 +219,8 @@ class GeminiTradingAgent:
         raw_response: str,
         model_name: str,
         used_fallback: bool,
+        decision_source: str,
+        signal_context: dict[str, Any] | None = None,
         error: str | None = None,
     ) -> None:
         generated_actions = [
@@ -197,6 +236,7 @@ class GeminiTradingAgent:
             }
             for action in actions
         ]
+        selected_focus = tuple(signal_context.get("selected_focus_tickers", [])) if signal_context else ()
         self._decision_records.append(
             GeminiDecisionRecord(
                 week_index=int(observation.week_index),
@@ -206,6 +246,8 @@ class GeminiTradingAgent:
                 raw_response=raw_response,
                 generated_actions=tuple(generated_actions),
                 used_fallback=used_fallback,
+                decision_source=decision_source,
+                selected_focus=selected_focus,
                 error=error,
             )
         )

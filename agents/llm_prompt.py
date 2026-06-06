@@ -7,6 +7,8 @@ from typing import Any
 
 import pandas as pd
 
+from agents.llm_signals import build_signal_context
+
 from simulator.config import SimulatorConfig
 from simulator.observation import Observation
 
@@ -42,12 +44,17 @@ def build_trading_prompt(observation: Observation, config: SimulatorConfig) -> s
         for item in observation.pending_liquidations
     ]
 
+    signal_context = build_signal_context(observation, config)
+
     payload: dict[str, Any] = {
         "instructions": (
-            "You are an autonomous long-only weekly trading agent. "
-            "Use only the observation below. Do not assume future prices. "
+            "You are an autonomous long-only weekly trading agent competing against human traders. "
+            "Use only the observation and signal_context below. Do not assume future prices. "
             "Respond with JSON only, using exactly two top-level keys: "
             "'rationale' (string) and 'actions' (array). "
+            "Deploy capital actively: keep roughly cash_reserve_target in cash, rotate into "
+            "selected_focus_tickers, exit weak holdings, and rebalance toward suggested_target_weights. "
+            "Do not sit in cash when ranked_candidates show positive momentum. "
             "Do not repeat the observation back."
         ),
         "decision_week": int(observation.week_index) + 1,
@@ -62,6 +69,7 @@ def build_trading_prompt(observation: Observation, config: SimulatorConfig) -> s
         "market_this_week": market_rows,
         "visible_price_history": price_history,
         "pending_liquidations": pending,
+        "signal_context": signal_context,
         "constraints": {
             "long_only": True,
             "max_actions_per_step": int(config.max_actions_per_step),
@@ -105,8 +113,10 @@ def build_trading_prompt(observation: Observation, config: SimulatorConfig) -> s
             "rules": [
                 "Submit at most one hold action and never mix hold with other actions.",
                 "Prefer nav_fraction for buys when sizing new positions.",
-                "Respect turnover and concentration limits; leave cash buffer if uncertain.",
-                "If no trade is warranted, return a single hold action.",
+                "Respect turnover, single_stock_cap, hhi_cap, and weekly_turnover_cap.",
+                "When selected_focus_tickers is non-empty, buy or rebalance toward suggested_target_weights.",
+                "Sell holdings that are not in selected_focus_tickers when better candidates exist.",
+                "Use hold only when ranked_candidates is empty or risk limits block every trade.",
             ],
         },
         "response_format": {
