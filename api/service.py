@@ -9,8 +9,11 @@ from pathlib import Path
 import time
 from typing import Any
 
-from agents.gemini_momentum import create_gemini_simulator_config
-from agents.gemini_tech_dca import apply_tech_dca_policy, tech_dca_rationale
+from agents.gemini_momentum import (
+    apply_gemini_momentum_policy,
+    create_gemini_simulator_config,
+    momentum_rationale,
+)
 from agents.llm_signals import build_signal_context
 from agents.runner import run_benchmark_agent
 from simulator.actions import Action, ActionType
@@ -274,9 +277,9 @@ def _run_one_gemini_step(runtime: RuntimeSession) -> None:
 
     signal_context = build_signal_context(observation, runtime.env.config)
     model_name = resolve_gemini_model(os.environ.get("GEMINI_MODEL"))
-    actions = apply_tech_dca_policy(observation, runtime.env.config)
-    decision_source = "tech_dca"
-    rationale = tech_dca_rationale(signal_context, actions)
+    actions = apply_gemini_momentum_policy(observation, runtime.env.config)
+    decision_source = "momentum_agent"
+    rationale = momentum_rationale(signal_context, actions)
     error: str | None = None
 
     decision_record = {

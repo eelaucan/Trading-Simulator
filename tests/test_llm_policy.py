@@ -103,7 +103,7 @@ def test_hold_only_client_runs_full_episode_with_signal_rescue() -> None:
     env = TradingEnvironment(market=market, config=config)
     agent = GeminiTradingAgent(simulator_config=config, client=_HoldOnlyClient())
     result = run_agent_episode(env, agent)
-    assert result.metrics.total_return > -0.20
+    assert result.metrics.total_return >= 0.40
     assert any(
         record.get("decision_source") in {"signal_rescue", "momentum_agent", "tech_dca"}
         for record in agent.decision_records

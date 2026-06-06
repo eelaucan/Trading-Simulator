@@ -77,15 +77,18 @@ def run_gemini_agent(
     output_dir: str | Path | None = None,
     output_prefix: str = "gemini_agent",
 ) -> AgentRunResult:
-    """Build and run the tech DCA Gemini agent on a weekly OHLCV CSV."""
-    from agents.gemini_momentum import create_gemini_simulator_config
-    from agents.gemini_tech_dca import apply_tech_dca_policy, tech_dca_rationale
+    """Build and run the concentrated momentum Gemini agent on a weekly OHLCV CSV."""
+    from agents.gemini_momentum import (
+        apply_gemini_momentum_policy,
+        create_gemini_simulator_config,
+        momentum_rationale,
+    )
     from agents.llm_signals import build_signal_context
 
     market = MarketReplay(data_path)
     config = simulator_config or create_gemini_simulator_config(market.available_tickers)
 
-    class _GeminiTechDcaAgent:
+    class _GeminiMomentumAgent:
         def __init__(self, sim_config: SimulatorConfig) -> None:
             self._config = sim_config
             self._decision_records: list[dict[str, Any]] = []
@@ -98,13 +101,13 @@ def run_gemini_agent(
             return tuple(self._decision_records)
 
         def decide(self, observation: Observation) -> list[Action]:
-            actions = apply_tech_dca_policy(observation, self._config)
+            actions = apply_gemini_momentum_policy(observation, self._config)
             signal_context = build_signal_context(observation, self._config)
             self._decision_records.append(
                 {
                     "week_index": int(observation.week_index),
-                    "decision_source": "tech_dca",
-                    "rationale": tech_dca_rationale(signal_context, actions),
+                    "decision_source": "momentum_agent",
+                    "rationale": momentum_rationale(signal_context, actions),
                     "generated_actions": [],
                 }
             )
@@ -122,7 +125,7 @@ def run_gemini_agent(
                     handle.write("\n")
 
     env = TradingEnvironment(market=market, config=config)
-    agent = _GeminiTechDcaAgent(config)
+    agent = _GeminiMomentumAgent(config)
     result = run_agent_episode(env, agent)
     if output_dir is None:
         return result
