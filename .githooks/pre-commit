@@ -1,0 +1,19 @@
+#!/bin/sh
+# Block commits unless they use the repo owner's identity.
+OWNER_EMAIL="85798607+eelaucan@users.noreply.github.com"
+
+if [ "$GIT_AUTHOR_EMAIL" = "$OWNER_EMAIL" ] && [ "$GIT_COMMITTER_EMAIL" = "$OWNER_EMAIL" ]; then
+  exit 0
+fi
+
+configured_email=$(git config user.email 2>/dev/null || true)
+if [ "$configured_email" = "$OWNER_EMAIL" ]; then
+  exit 0
+fi
+
+echo "Commit blocked: author must be Ela Uçan <$OWNER_EMAIL>." >&2
+echo "Use:" >&2
+echo "  GIT_AUTHOR_NAME='Ela Uçan' GIT_AUTHOR_EMAIL='$OWNER_EMAIL' \\" >&2
+echo "  GIT_COMMITTER_NAME='Ela Uçan' GIT_COMMITTER_EMAIL='$OWNER_EMAIL' \\" >&2
+echo "  git commit ..." >&2
+exit 1
