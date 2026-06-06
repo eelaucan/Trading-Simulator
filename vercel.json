@@ -3,5 +3,10 @@
   "framework": null,
   "installCommand": "cd ui_ts/frontend && npm install",
   "buildCommand": "cd ui_ts/frontend && npm run build",
-  "outputDirectory": "ui_ts/frontend/dist"
+  "outputDirectory": "ui_ts/frontend/dist",
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }
