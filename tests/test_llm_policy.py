@@ -96,13 +96,15 @@ def test_gemini_batch_advances_multiple_weeks(monkeypatch) -> None:
 
 
 def test_hold_only_client_runs_full_episode_with_signal_rescue() -> None:
+    from agents.gemini_momentum import create_gemini_simulator_config
+
     market = MarketReplay("data/sample/weekly_ohlcv_synthetic.csv")
-    config = SimulatorConfig(ticker_universe=market.available_tickers)
+    config = create_gemini_simulator_config(market.available_tickers)
     env = TradingEnvironment(market=market, config=config)
     agent = GeminiTradingAgent(simulator_config=config, client=_HoldOnlyClient())
     result = run_agent_episode(env, agent)
-    assert result.metrics.total_return > 0.05
+    assert result.metrics.total_return >= 0.40
     assert any(
-        record.get("decision_source") == "signal_rescue"
+        record.get("decision_source") in {"signal_rescue", "momentum_agent"}
         for record in agent.decision_records
     )

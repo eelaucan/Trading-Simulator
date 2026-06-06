@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from agents.benchmark_agent import AutonomousBenchmarkAgent
 from agents.llm_signals import build_signal_context, has_actionable_candidates
+from agents.gemini_momentum import create_gemini_agent_config, is_gemini_simulator_config
 from agents.runner import create_benchmark_agent_config
 from simulator.actions import Action, ActionType, QuantityType
 from simulator.config import SimulatorConfig
@@ -37,7 +38,11 @@ def apply_signal_rescue(
     simulator_config: SimulatorConfig,
 ) -> list[Action]:
     """Return benchmark-agent actions derived from the same visible signals."""
-    agent = AutonomousBenchmarkAgent(create_benchmark_agent_config(simulator_config))
+    if is_gemini_simulator_config(simulator_config):
+        agent_config = create_gemini_agent_config(simulator_config)
+    else:
+        agent_config = create_benchmark_agent_config(simulator_config)
+    agent = AutonomousBenchmarkAgent(agent_config)
     return agent.decide(observation)
 
 

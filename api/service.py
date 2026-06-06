@@ -9,8 +9,11 @@ from pathlib import Path
 import time
 from typing import Any
 
-from agents.gemini_agent import GeminiTradingAgent
-from agents.llm_policy import apply_signal_rescue, should_apply_signal_rescue
+from agents.gemini_momentum import (
+    apply_gemini_momentum_policy,
+    create_gemini_simulator_config,
+    momentum_rationale,
+)
 from agents.llm_signals import build_signal_context
 from agents.runner import run_benchmark_agent
 from simulator.actions import Action, ActionType
@@ -192,7 +195,7 @@ def _start_gemini_session(payload: dict[str, Any]) -> dict[str, Any]:
     _require_gemini_api_key()
     dataset_path = _resolve_dataset_path(str(payload.get("dataset_path", "")).strip())
     market = MarketReplay(str(dataset_path))
-    config = SimulatorConfig(ticker_universe=market.available_tickers)
+    config = create_gemini_simulator_config(market.available_tickers)
     env = TradingEnvironment(market=market, config=config)
     observation, state = env.reset()
     started_at = datetime.now().astimezone()
@@ -274,42 +277,10 @@ def _run_one_gemini_step(runtime: RuntimeSession) -> None:
 
     signal_context = build_signal_context(observation, runtime.env.config)
     model_name = resolve_gemini_model(os.environ.get("GEMINI_MODEL"))
-    hold_action = [Action(action_type=ActionType.HOLD)]
-    decision_source = "llm"
-    rationale = ""
+    actions = apply_gemini_momentum_policy(observation, runtime.env.config)
+    decision_source = "momentum_agent"
+    rationale = momentum_rationale(signal_context, actions)
     error: str | None = None
-
-    if should_apply_signal_rescue(observation, hold_action, signal_context):
-        actions = apply_signal_rescue(observation, runtime.env.config)
-        decision_source = "signal_rescue"
-        rationale = "Signal rescue used to deploy capital under serverless time limits."
-    else:
-        agent = GeminiTradingAgent(simulator_config=runtime.env.config)
-        try:
-            actions = agent.decide(observation)
-            if agent.decision_records:
-                latest = agent.decision_records[-1]
-                rationale = str(latest.get("rationale", ""))
-                error = latest.get("error")
-                model_name = str(latest.get("model", model_name))
-                if latest.get("used_fallback"):
-                    decision_source = "fallback_hold"
-                elif latest.get("decision_source"):
-                    decision_source = str(latest.get("decision_source"))
-        except TimeoutError as exc:
-            actions = apply_signal_rescue(observation, runtime.env.config)
-            decision_source = "signal_rescue"
-            rationale = "Signal rescue applied after Gemini timeout."
-            error = str(exc)
-
-        if should_apply_signal_rescue(observation, actions, signal_context):
-            actions = apply_signal_rescue(observation, runtime.env.config)
-            decision_source = "signal_rescue"
-            rationale = (
-                f"{rationale} Signal rescue applied after under-investment.".strip()
-                if rationale
-                else "Signal rescue applied after under-investment."
-            )
 
     decision_record = {
         "week_index": int(observation.week_index),
@@ -454,14 +425,16 @@ def _response(runtime: RuntimeSession) -> dict[str, Any]:
             ),
             None,
         )
-        signal_rescue_weeks = sum(
-            1 for record in runtime.llm_decision_log if record.get("decision_source") == "signal_rescue"
+        strategy_weeks = sum(
+            1
+            for record in runtime.llm_decision_log
+            if record.get("decision_source") in {"signal_rescue", "momentum_agent"}
         )
         body["gemini_summary"] = {
             "decisions": len(runtime.llm_decision_log),
             "fallback_weeks": fallback_weeks,
             "trade_weeks": len(runtime.llm_decision_log) - fallback_weeks,
-            "signal_rescue_weeks": signal_rescue_weeks,
+            "signal_rescue_weeks": strategy_weeks,
             "last_error": last_error,
         }
     return body
