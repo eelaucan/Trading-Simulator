@@ -5,7 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from agents.benchmark_agent import AutonomousBenchmarkAgent, TickerSignal
-from agents.gemini_momentum import create_gemini_agent_config, is_gemini_simulator_config
+from agents.gemini_momentum import is_gemini_simulator_config
+from agents.gemini_tech_dca import build_tech_dca_context
 from agents.runner import create_benchmark_agent_config
 from simulator.config import SimulatorConfig
 from simulator.observation import Observation
@@ -17,9 +18,9 @@ def build_signal_context(
 ) -> dict[str, Any]:
     """Rank tickers using the same momentum/volatility logic as the benchmark agent."""
     if is_gemini_simulator_config(simulator_config):
-        agent_config = create_gemini_agent_config(simulator_config)
-    else:
-        agent_config = create_benchmark_agent_config(simulator_config)
+        return build_tech_dca_context(observation, simulator_config)
+
+    agent_config = create_benchmark_agent_config(simulator_config)
     agent = AutonomousBenchmarkAgent(agent_config)
     signals = agent.compute_signals(observation)
     ranked_positive = _rank_positive_signals(signals, agent_config.min_score)

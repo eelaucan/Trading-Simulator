@@ -452,14 +452,14 @@ export class TradingSimulatorApp {
         const allFallback = summary.fallback_weeks === summary.decisions && summary.decisions > 0;
         return `
       <section class="session-zone">
-        ${zoneHeader("Gemini decisions", "Weekly momentum strategy and fallback status")}
+        ${zoneHeader("Gemini decisions", "Weekly tech DCA buys and fallback status")}
         <div class="panel-card ${allFallback ? "panel-card--warning" : ""}">
           ${allFallback ? `<div class="alert alert--error">Gemini did not execute trades this session. Every week fell back to HOLD.${summary.last_error ? ` Last error: ${summary.last_error}` : ""}</div>` : ""}
           ${metricGrid([
             ["Decision weeks", String(summary.decisions)],
             ["Weeks with trades", String(summary.trade_weeks)],
             ["Fallback HOLD weeks", String(summary.fallback_weeks)],
-            ["Momentum strategy weeks", String(summary.signal_rescue_weeks ?? 0)],
+            ["Tech DCA weeks", String(summary.signal_rescue_weeks ?? 0)],
             ["Last error", summary.last_error ?? "None"],
         ])}
         </div>
