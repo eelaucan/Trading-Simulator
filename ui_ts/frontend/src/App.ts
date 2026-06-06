@@ -497,6 +497,8 @@ export class TradingSimulatorApp {
             ["Weeks with trades", String(summary.trade_weeks)],
             ["Fallback HOLD weeks", String(summary.fallback_weeks)],
             ["Momentum strategy weeks", String(summary.signal_rescue_weeks ?? 0)],
+            ["Gemini decision weeks", String(summary.llm_weeks ?? 0)],
+            ["Session seed", String(session.gemini_profile?.session_seed ?? "—")],
             ["Last error", summary.last_error ?? "None"],
           ])}
         </div>

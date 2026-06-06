@@ -40,7 +40,13 @@ def resolve_gemini_model(requested: str | None) -> str:
 
 
 class GeminiClient(Protocol):
-    def generate_json(self, *, prompt: str, model: str) -> dict[str, Any]:
+    def generate_json(
+        self,
+        *,
+        prompt: str,
+        model: str,
+        temperature: float = 0.2,
+    ) -> dict[str, Any]:
         """Return a parsed JSON object from the model."""
 
 
@@ -86,9 +92,15 @@ class HttpGeminiClient:
         genai.configure(api_key=api_key.strip())
         self._genai = genai
 
-    def generate_json(self, *, prompt: str, model: str) -> dict[str, Any]:
+    def generate_json(
+        self,
+        *,
+        prompt: str,
+        model: str,
+        temperature: float = 0.2,
+    ) -> dict[str, Any]:
         generation_config = self._genai.GenerationConfig(
-            temperature=0.2,
+            temperature=float(temperature),
             response_mime_type="application/json",
         )
         gemini_model = self._genai.GenerativeModel(model)
@@ -171,7 +183,11 @@ class GeminiTradingAgent:
         raw_response = ""
         model_name = resolve_gemini_model(os.environ.get("GEMINI_MODEL", self.config.model))
         try:
-            payload = client.generate_json(prompt=prompt, model=model_name)
+            payload = client.generate_json(
+                prompt=prompt,
+                model=model_name,
+                temperature=self.config.temperature,
+            )
             raw_response = json.dumps(payload, sort_keys=True)
             rationale, actions = actions_from_llm_payload(
                 payload,

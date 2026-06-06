@@ -19,7 +19,7 @@ class _StubGeminiClient:
         self.payload = payload
         self.calls = 0
 
-    def generate_json(self, *, prompt: str, model: str) -> dict:
+    def generate_json(self, *, prompt: str, model: str, temperature: float = 0.2) -> dict:
         self.calls += 1
         assert "decision_week" in prompt
         return self.payload

@@ -77,20 +77,25 @@ def run_gemini_agent(
     output_dir: str | Path | None = None,
     output_prefix: str = "gemini_agent",
 ) -> AgentRunResult:
-    """Build and run the concentrated momentum Gemini agent on a weekly OHLCV CSV."""
-    from agents.gemini_momentum import (
-        apply_gemini_momentum_policy,
-        create_gemini_simulator_config,
-        momentum_rationale,
+    """Build and run the stochastic Gemini agent on a weekly OHLCV CSV."""
+    from agents.gemini_momentum import create_gemini_simulator_config
+    from agents.gemini_stochastic import (
+        apply_stochastic_momentum_policy,
+        create_gemini_session_profile,
+        stochastic_rationale,
     )
     from agents.llm_signals import build_signal_context
 
     market = MarketReplay(data_path)
+    profile = create_gemini_session_profile(market_weeks=market.n_weeks)
     config = simulator_config or create_gemini_simulator_config(market.available_tickers)
+    config.initial_decision_week = profile.initial_decision_week
+    config.seed = profile.session_seed
 
-    class _GeminiMomentumAgent:
-        def __init__(self, sim_config: SimulatorConfig) -> None:
+    class _GeminiStochasticAgent:
+        def __init__(self, sim_config: SimulatorConfig, session_profile) -> None:
             self._config = sim_config
+            self._profile = session_profile
             self._decision_records: list[dict[str, Any]] = []
 
         def reset_log(self) -> None:
@@ -101,13 +106,22 @@ def run_gemini_agent(
             return tuple(self._decision_records)
 
         def decide(self, observation: Observation) -> list[Action]:
-            actions = apply_gemini_momentum_policy(observation, self._config)
+            actions = apply_stochastic_momentum_policy(
+                observation,
+                self._config,
+                self._profile,
+            )
             signal_context = build_signal_context(observation, self._config)
             self._decision_records.append(
                 {
                     "week_index": int(observation.week_index),
-                    "decision_source": "momentum_agent",
-                    "rationale": momentum_rationale(signal_context, actions),
+                    "decision_source": "stochastic_momentum",
+                    "rationale": stochastic_rationale(
+                        profile=self._profile,
+                        signal_context=signal_context,
+                        actions=actions,
+                        used_llm=False,
+                    ),
                     "generated_actions": [],
                 }
             )
@@ -125,7 +139,7 @@ def run_gemini_agent(
                     handle.write("\n")
 
     env = TradingEnvironment(market=market, config=config)
-    agent = _GeminiMomentumAgent(config)
+    agent = _GeminiStochasticAgent(config, profile)
     result = run_agent_episode(env, agent)
     if output_dir is None:
         return result

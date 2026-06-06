@@ -9,11 +9,15 @@ from pathlib import Path
 import time
 from typing import Any
 
-from agents.gemini_momentum import (
-    apply_gemini_momentum_policy,
-    create_gemini_simulator_config,
-    momentum_rationale,
+from agents.gemini_agent import GeminiAgentConfig, GeminiTradingAgent
+from agents.gemini_momentum import create_gemini_simulator_config
+from agents.gemini_stochastic import (
+    GeminiSessionProfile,
+    apply_stochastic_momentum_policy,
+    create_gemini_session_profile,
+    stochastic_rationale,
 )
+from agents.llm_policy import apply_signal_rescue, should_apply_signal_rescue
 from agents.llm_signals import build_signal_context
 from agents.runner import run_benchmark_agent
 from simulator.actions import Action, ActionType
@@ -46,6 +50,7 @@ class RuntimeSession:
     metrics: SimulationMetrics | None = None
     last_step_info: dict[str, Any] | None = None
     llm_decision_log: list[dict[str, Any]] | None = None
+    gemini_profile: GeminiSessionProfile | None = None
     error: str | None = None
 
 
@@ -195,7 +200,10 @@ def _start_gemini_session(payload: dict[str, Any]) -> dict[str, Any]:
     _require_gemini_api_key()
     dataset_path = _resolve_dataset_path(str(payload.get("dataset_path", "")).strip())
     market = MarketReplay(str(dataset_path))
+    profile = create_gemini_session_profile(market_weeks=market.n_weeks)
     config = create_gemini_simulator_config(market.available_tickers)
+    config.initial_decision_week = profile.initial_decision_week
+    config.seed = profile.session_seed
     env = TradingEnvironment(market=market, config=config)
     observation, state = env.reset()
     started_at = datetime.now().astimezone()
@@ -225,6 +233,7 @@ def _start_gemini_session(payload: dict[str, Any]) -> dict[str, Any]:
         current_batch=[],
         metrics=metrics,
         llm_decision_log=[],
+        gemini_profile=profile,
     )
     return _response(runtime)
 
@@ -275,12 +284,76 @@ def _run_one_gemini_step(runtime: RuntimeSession) -> None:
     if observation is None:
         raise ValueError("Session is not active.")
 
+    profile = runtime.gemini_profile
+    if profile is None:
+        profile = create_gemini_session_profile(
+            market_weeks=runtime.env._market.n_weeks,
+        )
+        runtime.gemini_profile = profile
+
     signal_context = build_signal_context(observation, runtime.env.config)
     model_name = resolve_gemini_model(os.environ.get("GEMINI_MODEL"))
-    actions = apply_gemini_momentum_policy(observation, runtime.env.config)
-    decision_source = "momentum_agent"
-    rationale = momentum_rationale(signal_context, actions)
+    used_llm = False
+    decision_source = "stochastic_momentum"
+    rationale = ""
     error: str | None = None
+
+    if profile.should_call_llm(observation.week_index):
+        agent = GeminiTradingAgent(
+            simulator_config=runtime.env.config,
+            config=GeminiAgentConfig(
+                model=model_name,
+                temperature=profile.temperature,
+            ),
+        )
+        try:
+            actions = agent.decide(observation)
+            used_llm = True
+            decision_source = "llm"
+            if agent.decision_records:
+                latest = agent.decision_records[-1]
+                rationale = str(latest.get("rationale", ""))
+                error = latest.get("error")
+                if latest.get("used_fallback"):
+                    decision_source = "fallback_hold"
+                elif latest.get("decision_source"):
+                    decision_source = str(latest.get("decision_source"))
+        except TimeoutError as exc:
+            actions = apply_stochastic_momentum_policy(
+                observation,
+                runtime.env.config,
+                profile,
+            )
+            decision_source = "stochastic_momentum"
+            error = str(exc)
+        except Exception as exc:
+            actions = apply_stochastic_momentum_policy(
+                observation,
+                runtime.env.config,
+                profile,
+            )
+            decision_source = "stochastic_momentum"
+            error = str(exc)
+    else:
+        actions = apply_stochastic_momentum_policy(
+            observation,
+            runtime.env.config,
+            profile,
+        )
+
+    if should_apply_signal_rescue(observation, actions, signal_context):
+        actions = apply_signal_rescue(observation, runtime.env.config)
+        decision_source = "signal_rescue" if decision_source == "llm" else "stochastic_momentum"
+        if not rationale:
+            rationale = "Capital deployment guardrail applied after under-investment."
+
+    if not rationale:
+        rationale = stochastic_rationale(
+            profile=profile,
+            signal_context=signal_context,
+            actions=actions,
+            used_llm=used_llm,
+        )
 
     decision_record = {
         "week_index": int(observation.week_index),
@@ -291,6 +364,8 @@ def _run_one_gemini_step(runtime: RuntimeSession) -> None:
         "used_fallback": decision_source == "fallback_hold",
         "decision_source": decision_source,
         "selected_focus": list(signal_context.get("selected_focus_tickers", [])),
+        "session_seed": profile.session_seed,
+        "temperature": profile.temperature,
         "error": error,
     }
 
@@ -428,14 +503,25 @@ def _response(runtime: RuntimeSession) -> dict[str, Any]:
         strategy_weeks = sum(
             1
             for record in runtime.llm_decision_log
-            if record.get("decision_source") in {"signal_rescue", "momentum_agent", "tech_dca"}
+            if record.get("decision_source")
+            in {"signal_rescue", "momentum_agent", "tech_dca", "stochastic_momentum", "llm"}
+        )
+        llm_weeks = sum(
+            1 for record in runtime.llm_decision_log if record.get("decision_source") == "llm"
         )
         body["gemini_summary"] = {
             "decisions": len(runtime.llm_decision_log),
             "fallback_weeks": fallback_weeks,
             "trade_weeks": len(runtime.llm_decision_log) - fallback_weeks,
             "signal_rescue_weeks": strategy_weeks,
+            "llm_weeks": llm_weeks,
             "last_error": last_error,
+        }
+    if runtime.gemini_profile is not None:
+        body["gemini_profile"] = {
+            "session_seed": runtime.gemini_profile.session_seed,
+            "temperature": runtime.gemini_profile.temperature,
+            "initial_decision_week": runtime.gemini_profile.initial_decision_week + 1,
         }
     return body
 

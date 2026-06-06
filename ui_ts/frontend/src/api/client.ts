@@ -91,11 +91,17 @@ export interface SessionResponse {
   batch_steps?: number;
   latest_decision?: Record<string, unknown>;
   llm_decision_log?: Array<Record<string, unknown>>;
+  gemini_profile?: {
+    session_seed: number;
+    temperature: number;
+    initial_decision_week: number;
+  };
   gemini_summary?: {
     decisions: number;
     fallback_weeks: number;
     trade_weeks: number;
     signal_rescue_weeks: number;
+    llm_weeks?: number;
     last_error: string | null;
   };
 }
