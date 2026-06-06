@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 
 from agents.benchmark_agent import AutonomousBenchmarkAgent, BenchmarkAgentConfig
+from agents.gemini_agent import GeminiTradingAgent
 from simulator.config import SimulatorConfig
 from simulator.env import TradingEnvironment
 from simulator.market import MarketReplay
@@ -66,6 +67,40 @@ def run_agent_episode(
         final_state=state,
         initial_observation=initial_observation,
         output_paths={},
+    )
+
+
+def run_gemini_agent(
+    data_path: str | Path,
+    *,
+    simulator_config: SimulatorConfig | None = None,
+    output_dir: str | Path | None = None,
+    output_prefix: str = "gemini_agent",
+) -> AgentRunResult:
+    """Build and run the Gemini-backed agent on a weekly OHLCV CSV."""
+    market = MarketReplay(data_path)
+    config = simulator_config or SimulatorConfig(
+        initial_cash=100_000.0,
+        ticker_universe=market.available_tickers,
+    )
+    env = TradingEnvironment(market=market, config=config)
+    agent = GeminiTradingAgent(simulator_config=config)
+    result = run_agent_episode(env, agent)
+    if output_dir is None:
+        return result
+
+    output_paths = export_agent_run_outputs(
+        result=result,
+        output_dir=output_dir,
+        output_prefix=output_prefix,
+    )
+    return AgentRunResult(
+        env=result.env,
+        agent=result.agent,
+        metrics=result.metrics,
+        final_state=result.final_state,
+        initial_observation=result.initial_observation,
+        output_paths=output_paths,
     )
 
 

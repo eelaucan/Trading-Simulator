@@ -88,6 +88,7 @@ export interface SessionResponse {
   last_step_info?: Record<string, unknown>;
   error?: string | null;
   done: boolean;
+  llm_decision_log?: Array<Record<string, unknown>>;
 }
 
 export interface StartSessionInput {
@@ -106,7 +107,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || `Request failed (${response.status})`);
+    let message = detail || `Request failed (${response.status})`;
+    try {
+      const parsed = JSON.parse(detail) as { detail?: string };
+      if (typeof parsed.detail === "string") {
+        message = parsed.detail;
+      }
+    } catch {
+      // Keep raw response text when the API does not return JSON.
+    }
+    throw new Error(message);
   }
   return (await response.json()) as T;
 }
@@ -120,6 +130,13 @@ export async function startSession(input: StartSessionInput): Promise<SessionRes
   return request<SessionResponse>("/api/session/start", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export async function advanceGeminiStep(session: string): Promise<SessionResponse> {
+  return request<SessionResponse>("/api/session/ai-step", {
+    method: "POST",
+    body: JSON.stringify({ session }),
   });
 }
 

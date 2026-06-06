@@ -26,6 +26,12 @@ body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+body.tp-standalone {
+  min-height: 100vh;
+  background: var(--tp-bg);
+  padding: 1rem;
+}
+
 button,
 input,
 select {

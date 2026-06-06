@@ -1,86 +1,58 @@
-import {
-  advanceGeminiStep,
-  fetchDatasets,
-  sendPlannerEvent,
-  startSession,
-  type DatasetOption,
-  type SessionResponse,
-} from "./api/client.js";
-import {
-  allocationBars,
-  dataTable,
-  drawdownChart,
-  holdingsPanel,
-  insightChips,
-  lineChart,
-  marketPanel,
-  metricGrid,
-  noteCard,
-  pendingLiquidationsPanel,
-  portfolioInsightChips,
-  zoneHeader,
-} from "./components/ui.js";
+import { advanceGeminiStep, fetchDatasets, sendPlannerEvent, startSession, } from "./api/client.js";
+import { allocationBars, dataTable, drawdownChart, holdingsPanel, insightChips, lineChart, marketPanel, metricGrid, noteCard, pendingLiquidationsPanel, portfolioInsightChips, zoneHeader, } from "./components/ui.js";
 import { TradePlannerApp } from "./TradePlanner.js";
-import type { TradePlannerEventPayload, TradePlannerProps } from "./types.js";
 import { downloadSessionCsv, downloadSessionJson } from "./utils/export.js";
 import { currency, pct } from "./utils/format.js";
-
-type View = "setup" | "session" | "finished" | "gemini_running";
-
 export class TradingSimulatorApp {
-  private readonly root: HTMLElement;
-  private view: View = "setup";
-  private datasets: DatasetOption[] = [];
-  private session: SessionResponse | null = null;
-  private selectedTicker = "";
-  private planner: TradePlannerApp | null = null;
-  private plannerHost: HTMLElement | null = null;
-  private loading = false;
-  private geminiStatus = "";
-
-  constructor(root: HTMLElement) {
-    this.root = root;
-  }
-
-  public async init(): Promise<void> {
-    try {
-      this.datasets = await fetchDatasets();
-    } catch {
-      this.datasets = [
-        {
-          id: "data/sample/weekly_ohlcv_synthetic.csv",
-          label: "weekly_ohlcv_synthetic.csv",
-          path: "data/sample/weekly_ohlcv_synthetic.csv",
-        },
-      ];
+    constructor(root) {
+        this.view = "setup";
+        this.datasets = [];
+        this.session = null;
+        this.selectedTicker = "";
+        this.planner = null;
+        this.plannerHost = null;
+        this.loading = false;
+        this.geminiStatus = "";
+        this.root = root;
     }
-    this.render();
-  }
-
-  private render(): void {
-    if (this.view === "setup") {
-      this.renderSetup();
-      return;
+    async init() {
+        try {
+            this.datasets = await fetchDatasets();
+        }
+        catch {
+            this.datasets = [
+                {
+                    id: "data/sample/weekly_ohlcv_synthetic.csv",
+                    label: "weekly_ohlcv_synthetic.csv",
+                    path: "data/sample/weekly_ohlcv_synthetic.csv",
+                },
+            ];
+        }
+        this.render();
     }
-    if (!this.session) {
-      this.view = "setup";
-      this.renderSetup();
-      return;
+    render() {
+        if (this.view === "setup") {
+            this.renderSetup();
+            return;
+        }
+        if (!this.session) {
+            this.view = "setup";
+            this.renderSetup();
+            return;
+        }
+        if (this.view === "gemini_running") {
+            this.renderGeminiRunning();
+            return;
+        }
+        if (this.session.status === "finished") {
+            this.renderFinished();
+            return;
+        }
+        this.renderSession();
     }
-    if (this.view === "gemini_running") {
-      this.renderGeminiRunning();
-      return;
-    }
-    if (this.session.status === "finished") {
-      this.renderFinished();
-      return;
-    }
-    this.renderSession();
-  }
-
-  private renderSetup(): void {
-    const defaultDataset = this.datasets[0]?.path ?? "data/sample/weekly_ohlcv_synthetic.csv";
-    this.root.innerHTML = `
+    renderSetup() {
+        const defaultDataset = this.datasets[0]?.path ?? "data/sample/weekly_ohlcv_synthetic.csv";
+        this.root.innerHTML = `
       <div class="setup-page">
         <div class="setup-layout">
           <section class="setup-hero">
@@ -167,11 +139,8 @@ export class TradingSimulatorApp {
                 <label for="dataset_path">Dataset</label>
                 <select id="dataset_path" name="dataset_path">
                   ${this.datasets
-                    .map(
-                      (dataset) =>
-                        `<option value="${dataset.path}"${dataset.path === defaultDataset ? " selected" : ""}>${dataset.label}</option>`,
-                    )
-                    .join("")}
+            .map((dataset) => `<option value="${dataset.path}"${dataset.path === defaultDataset ? " selected" : ""}>${dataset.label}</option>`)
+            .join("")}
                 </select>
               </div>
               <div class="form-field">
@@ -185,82 +154,80 @@ export class TradingSimulatorApp {
           </section>
         </div>
       </div>`;
-
-    const form = this.root.querySelector<HTMLFormElement>("#setup-form");
-    const conditionField = this.root.querySelector<HTMLDivElement>("#condition-field");
-    form?.querySelectorAll<HTMLInputElement>('input[name="run_mode"]').forEach((input) => {
-      input.addEventListener("change", () => {
-        if (!conditionField) return;
-        const selected = form?.querySelector<HTMLInputElement>('input[name="run_mode"]:checked');
-        const isAutonomousAi =
-          selected?.value === "ai_benchmark" || selected?.value === "ai_gemini";
-        conditionField.style.display = isAutonomousAi ? "none" : "block";
-      });
-    });
-    form?.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      await this.handleStart(form);
-    });
-  }
-
-  private async handleStart(form: HTMLFormElement): Promise<void> {
-    const data = new FormData(form);
-    this.loading = true;
-    this.render();
-    try {
-      const runMode = String(data.get("run_mode") ?? "human");
-      const response = await startSession({
-        participant_id: String(data.get("participant_id") ?? "").trim(),
-        condition:
-          runMode === "ai_gemini"
-            ? "ai_gemini"
-            : runMode === "ai_benchmark"
-              ? "ai_benchmark"
-              : String(data.get("condition") ?? "human_only"),
-        run_mode: runMode,
-        episode_name: String(data.get("episode_name") ?? "pilot_episode_01").trim(),
-        dataset_path: String(data.get("dataset_path") ?? ""),
-        notes: String(data.get("notes") ?? "").trim(),
-      });
-      this.session = response;
-      this.selectedTicker = response.observation?.available_tickers[0] ?? "";
-      if (runMode === "ai_gemini" && response.status === "running") {
-        this.view = "gemini_running";
+        const form = this.root.querySelector("#setup-form");
+        const conditionField = this.root.querySelector("#condition-field");
+        form?.querySelectorAll('input[name="run_mode"]').forEach((input) => {
+            input.addEventListener("change", () => {
+                if (!conditionField)
+                    return;
+                const selected = form?.querySelector('input[name="run_mode"]:checked');
+                const isAutonomousAi = selected?.value === "ai_benchmark" || selected?.value === "ai_gemini";
+                conditionField.style.display = isAutonomousAi ? "none" : "block";
+            });
+        });
+        form?.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            await this.handleStart(form);
+        });
+    }
+    async handleStart(form) {
+        const data = new FormData(form);
+        this.loading = true;
         this.render();
-        await this.runGeminiEpisode();
-        return;
-      }
-      this.view = response.status === "finished" ? "finished" : "session";
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to start session.");
-    } finally {
-      this.loading = false;
-      this.render();
+        try {
+            const runMode = String(data.get("run_mode") ?? "human");
+            const response = await startSession({
+                participant_id: String(data.get("participant_id") ?? "").trim(),
+                condition: runMode === "ai_gemini"
+                    ? "ai_gemini"
+                    : runMode === "ai_benchmark"
+                        ? "ai_benchmark"
+                        : String(data.get("condition") ?? "human_only"),
+                run_mode: runMode,
+                episode_name: String(data.get("episode_name") ?? "pilot_episode_01").trim(),
+                dataset_path: String(data.get("dataset_path") ?? ""),
+                notes: String(data.get("notes") ?? "").trim(),
+            });
+            this.session = response;
+            this.selectedTicker = response.observation?.available_tickers[0] ?? "";
+            if (runMode === "ai_gemini" && response.status === "running") {
+                this.view = "gemini_running";
+                this.render();
+                await this.runGeminiEpisode();
+                return;
+            }
+            this.view = response.status === "finished" ? "finished" : "session";
+        }
+        catch (error) {
+            alert(error instanceof Error ? error.message : "Unable to start session.");
+        }
+        finally {
+            this.loading = false;
+            this.render();
+        }
     }
-  }
-
-  private async runGeminiEpisode(): Promise<void> {
-    while (this.session?.status === "running") {
-      const week = (this.session.observation?.week_index ?? 0) + 1;
-      this.geminiStatus = `Gemini is deciding for week ${week}…`;
-      this.render();
-      try {
-        this.session = await advanceGeminiStep(this.session.session);
-      } catch (error) {
-        alert(error instanceof Error ? error.message : "Gemini step failed.");
-        this.view = "setup";
-        this.session = null;
+    async runGeminiEpisode() {
+        while (this.session?.status === "running") {
+            const week = (this.session.observation?.week_index ?? 0) + 1;
+            this.geminiStatus = `Gemini is deciding for week ${week}…`;
+            this.render();
+            try {
+                this.session = await advanceGeminiStep(this.session.session);
+            }
+            catch (error) {
+                alert(error instanceof Error ? error.message : "Gemini step failed.");
+                this.view = "setup";
+                this.session = null;
+                this.geminiStatus = "";
+                return;
+            }
+        }
         this.geminiStatus = "";
-        return;
-      }
+        this.view = this.session?.status === "finished" ? "finished" : "setup";
     }
-    this.geminiStatus = "";
-    this.view = this.session?.status === "finished" ? "finished" : "setup";
-  }
-
-  private renderGeminiRunning(): void {
-    const session = this.session;
-    this.root.innerHTML = `
+    renderGeminiRunning() {
+        const session = this.session;
+        this.root.innerHTML = `
       <div class="setup-page">
         <div class="setup-layout setup-layout--centered">
           <section class="setup-panel">
@@ -279,18 +246,17 @@ export class TradingSimulatorApp {
           </section>
         </div>
       </div>`;
-  }
-
-  private renderSidebar(): string {
-    const session = this.session;
-    if (!session) return "";
-    const weekLabel =
-      session.observation !== undefined
-        ? `Week ${session.observation.week_index + 1}`
-        : session.status === "finished"
-          ? "Complete"
-          : "—";
-    return `
+    }
+    renderSidebar() {
+        const session = this.session;
+        if (!session)
+            return "";
+        const weekLabel = session.observation !== undefined
+            ? `Week ${session.observation.week_index + 1}`
+            : session.status === "finished"
+                ? "Complete"
+                : "—";
+        return `
       <aside class="app-sidebar">
         <div class="sidebar-brand">Trading Simulator</div>
         <div class="sidebar-card">
@@ -303,10 +269,9 @@ export class TradingSimulatorApp {
         </div>
         <button class="btn btn--block" id="reset-session">New session</button>
       </aside>`;
-  }
-
-  private renderSessionHeader(observation: NonNullable<SessionResponse["observation"]>, portfolio: SessionResponse["portfolio"]): string {
-    return `
+    }
+    renderSessionHeader(observation, portfolio) {
+        return `
       <header class="session-header">
         <div class="session-header-primary">
           <span class="session-header-label">Decision week</span>
@@ -325,14 +290,13 @@ export class TradingSimulatorApp {
           <span class="session-header-value">${currency(portfolio.cash)}</span>
         </div>
       </header>`;
-  }
-
-  private renderSession(): void {
-    const session = this.session;
-    const observation = session?.observation;
-    if (!session || !observation) return;
-
-    this.root.innerHTML = `
+    }
+    renderSession() {
+        const session = this.session;
+        const observation = session?.observation;
+        if (!session || !observation)
+            return;
+        this.root.innerHTML = `
       <div class="app-shell">
         ${this.renderSidebar()}
         <main class="app-main session-main">
@@ -349,11 +313,8 @@ export class TradingSimulatorApp {
                 <label for="chart_ticker">Stock</label>
                 <select id="chart_ticker">
                   ${observation.available_tickers
-                    .map(
-                      (ticker) =>
-                        `<option value="${ticker}"${ticker === this.selectedTicker ? " selected" : ""}>${ticker}</option>`,
-                    )
-                    .join("")}
+            .map((ticker) => `<option value="${ticker}"${ticker === this.selectedTicker ? " selected" : ""}>${ticker}</option>`)
+            .join("")}
                 </select>
               </div>
             </div>
@@ -366,11 +327,11 @@ export class TradingSimulatorApp {
             ${zoneHeader("Portfolio", "Positions, performance, and risk")}
             <div class="session-portfolio-top">
               ${metricGrid([
-                ["Invested", currency(session.portfolio.invested)],
-                ["Positions", String(session.portfolio.positions)],
-                ["HHI", session.portfolio.concentration_hhi.toFixed(4)],
-                ["Weekly turnover", pct(session.portfolio.weekly_turnover)],
-              ])}
+            ["Invested", currency(session.portfolio.invested)],
+            ["Positions", String(session.portfolio.positions)],
+            ["HHI", session.portfolio.concentration_hhi.toFixed(4)],
+            ["Weekly turnover", pct(session.portfolio.weekly_turnover)],
+        ])}
               <div class="panel-card panel-card--compact">
                 <p class="panel-label">Allocation</p>
                 ${allocationBars(session.portfolio.allocation)}
@@ -389,10 +350,10 @@ export class TradingSimulatorApp {
               <div class="panel-card">
                 <p class="panel-label">Risk &amp; scheduled liquidations</p>
                 ${metricGrid([
-                  ["Volatility", session.portfolio.portfolio_volatility === null ? "N/A" : pct(session.portfolio.portfolio_volatility)],
-                  ["Concentration", session.portfolio.concentration_hhi.toFixed(4)],
-                  ["Turnover", pct(session.portfolio.weekly_turnover)],
-                ])}
+            ["Volatility", session.portfolio.portfolio_volatility === null ? "N/A" : pct(session.portfolio.portfolio_volatility)],
+            ["Concentration", session.portfolio.concentration_hhi.toFixed(4)],
+            ["Turnover", pct(session.portfolio.weekly_turnover)],
+        ])}
                 ${pendingLiquidationsPanel(observation.pending_liquidations)}
               </div>
             </div>
@@ -407,64 +368,66 @@ export class TradingSimulatorApp {
           <div id="step-feedback"></div>
         </main>
       </div>`;
-
-    const tickerSelect = this.root.querySelector<HTMLSelectElement>("#chart_ticker");
-    tickerSelect?.addEventListener("change", () => {
-      this.selectedTicker = tickerSelect.value;
-      this.updateMarketPanel();
-    });
-    this.updateMarketPanel();
-    this.mountPlanner(session.planner_props);
-    this.renderStepFeedback();
-    this.root.querySelector("#reset-session")?.addEventListener("click", () => this.reset());
-  }
-
-  private updateMarketPanel(): void {
-    const session = this.session;
-    const host = this.root.querySelector<HTMLDivElement>("#market-content");
-    if (!session?.observation || !host) return;
-    host.innerHTML = marketPanel(session.observation, this.selectedTicker);
-  }
-
-  private mountPlanner(props: TradePlannerProps | undefined): void {
-    const host = this.root.querySelector<HTMLDivElement>("#planner-host");
-    if (!host) return;
-    host.innerHTML = "";
-    this.plannerHost = host;
-    this.planner = new TradePlannerApp(host, {
-      emit: async (payload: TradePlannerEventPayload) => {
-        if (!this.session) return;
-        try {
-          this.session = await sendPlannerEvent(this.session.session, payload);
-          if (this.session.status === "finished") {
-            this.view = "finished";
-            this.render();
+        const tickerSelect = this.root.querySelector("#chart_ticker");
+        tickerSelect?.addEventListener("change", () => {
+            this.selectedTicker = tickerSelect.value;
+            this.updateMarketPanel();
+        });
+        this.updateMarketPanel();
+        this.mountPlanner(session.planner_props);
+        this.renderStepFeedback();
+        this.root.querySelector("#reset-session")?.addEventListener("click", () => this.reset());
+    }
+    updateMarketPanel() {
+        const session = this.session;
+        const host = this.root.querySelector("#market-content");
+        if (!session?.observation || !host)
             return;
-          }
-          this.renderSession();
-        } catch (error) {
-          if (this.session) {
-            this.session = {
-              ...this.session,
-              error: error instanceof Error ? error.message : "Planner request failed.",
-            };
-          }
-          this.renderSession();
-        }
-      },
-      setFrameHeight: () => undefined,
-    });
-    if (props) this.planner.setProps(props);
-  }
-
-  private renderStepFeedback(): void {
-    const host = this.root.querySelector<HTMLDivElement>("#step-feedback");
-    const info = this.session?.last_step_info;
-    if (!host || !info) return;
-    const items = Array.isArray(info.position_change_items)
-      ? (info.position_change_items as string[])
-      : [];
-    host.innerHTML = `
+        host.innerHTML = marketPanel(session.observation, this.selectedTicker);
+    }
+    mountPlanner(props) {
+        const host = this.root.querySelector("#planner-host");
+        if (!host)
+            return;
+        host.innerHTML = "";
+        this.plannerHost = host;
+        this.planner = new TradePlannerApp(host, {
+            emit: async (payload) => {
+                if (!this.session)
+                    return;
+                try {
+                    this.session = await sendPlannerEvent(this.session.session, payload);
+                    if (this.session.status === "finished") {
+                        this.view = "finished";
+                        this.render();
+                        return;
+                    }
+                    this.renderSession();
+                }
+                catch (error) {
+                    if (this.session) {
+                        this.session = {
+                            ...this.session,
+                            error: error instanceof Error ? error.message : "Planner request failed.",
+                        };
+                    }
+                    this.renderSession();
+                }
+            },
+            setFrameHeight: () => undefined,
+        });
+        if (props)
+            this.planner.setProps(props);
+    }
+    renderStepFeedback() {
+        const host = this.root.querySelector("#step-feedback");
+        const info = this.session?.last_step_info;
+        if (!host || !info)
+            return;
+        const items = Array.isArray(info.position_change_items)
+            ? info.position_change_items
+            : [];
+        host.innerHTML = `
       <section class="session-zone">
         ${zoneHeader("Last week", "Results after your submitted plan executed")}
         <div class="panel-card feedback-panel">
@@ -475,13 +438,13 @@ export class TradingSimulatorApp {
           ${items.length ? `<ul class="feedback-list">${items.map((item) => `<li>${item}</li>`).join("")}</ul>` : noteCard("No position changes recorded.", true)}
         </div>
       </section>`;
-  }
-
-  private renderFinished(): void {
-    const session = this.session;
-    if (!session) return;
-    const metrics = session.metrics;
-    this.root.innerHTML = `
+    }
+    renderFinished() {
+        const session = this.session;
+        if (!session)
+            return;
+        const metrics = session.metrics;
+        this.root.innerHTML = `
       <div class="app-shell">
         ${this.renderSidebar()}
         <main class="app-main session-main">
@@ -521,29 +484,26 @@ export class TradingSimulatorApp {
           <section class="session-zone">
             ${zoneHeader("Results", "Research metrics for this session")}
             ${metrics ? metricGrid([
-              ["Final portfolio value", currency(session.portfolio.total_nav)],
-              ["Total return", pct(metrics.total_return)],
-              ["Largest drawdown", pct(metrics.max_drawdown)],
-              ["Realized volatility", metrics.realized_vol === null ? "N/A" : pct(metrics.realized_vol)],
-              ["Average weekly turnover", pct(metrics.avg_weekly_turnover)],
-              ["Average concentration", metrics.avg_hhi.toFixed(4)],
-              ["Blow-up flag", metrics.blow_up_flag ? "Yes" : "No"],
-            ]) : ""}
+            ["Final portfolio value", currency(session.portfolio.total_nav)],
+            ["Total return", pct(metrics.total_return)],
+            ["Largest drawdown", pct(metrics.max_drawdown)],
+            ["Realized volatility", metrics.realized_vol === null ? "N/A" : pct(metrics.realized_vol)],
+            ["Average weekly turnover", pct(metrics.avg_weekly_turnover)],
+            ["Average concentration", metrics.avg_hhi.toFixed(4)],
+            ["Blow-up flag", metrics.blow_up_flag ? "Yes" : "No"],
+        ]) : ""}
             <div class="panel-card panel-card--spaced">
               <p class="panel-label">Session details</p>
-              ${dataTable(
-                ["Field", "Value"],
-                [
-                  ["Participant code", session.metadata.participant_id],
-                  ["Session type", session.metadata.condition_label],
-                  ["Episode name", session.metadata.episode_name],
-                  ["Dataset path", session.metadata.dataset_path],
-                  ["First decision week", String(session.metadata.decision_start_week)],
-                  ["Visible history at start", `${session.metadata.visible_history_weeks_at_start} week(s)`],
-                  ["Started at", session.metadata.started_at],
-                  ["Finished at", session.metadata.finished_at ?? "Not finished"],
-                ],
-              )}
+              ${dataTable(["Field", "Value"], [
+            ["Participant code", session.metadata.participant_id],
+            ["Session type", session.metadata.condition_label],
+            ["Episode name", session.metadata.episode_name],
+            ["Dataset path", session.metadata.dataset_path],
+            ["First decision week", String(session.metadata.decision_start_week)],
+            ["Visible history at start", `${session.metadata.visible_history_weeks_at_start} week(s)`],
+            ["Started at", session.metadata.started_at],
+            ["Finished at", session.metadata.finished_at ?? "Not finished"],
+        ])}
             </div>
           </section>
 
@@ -564,20 +524,21 @@ export class TradingSimulatorApp {
           </section>
         </main>
       </div>`;
-    this.root.querySelector("#reset-session")?.addEventListener("click", () => this.reset());
-    this.root.querySelector("#download-json")?.addEventListener("click", () => {
-      if (this.session) downloadSessionJson(this.session);
-    });
-    this.root.querySelector("#download-csv")?.addEventListener("click", () => {
-      if (this.session) downloadSessionCsv(this.session);
-    });
-  }
-
-  private reset(): void {
-    this.session = null;
-    this.planner = null;
-    this.plannerHost = null;
-    this.view = "setup";
-    this.render();
-  }
+        this.root.querySelector("#reset-session")?.addEventListener("click", () => this.reset());
+        this.root.querySelector("#download-json")?.addEventListener("click", () => {
+            if (this.session)
+                downloadSessionJson(this.session);
+        });
+        this.root.querySelector("#download-csv")?.addEventListener("click", () => {
+            if (this.session)
+                downloadSessionCsv(this.session);
+        });
+    }
+    reset() {
+        this.session = null;
+        this.planner = null;
+        this.plannerHost = null;
+        this.view = "setup";
+        this.render();
+    }
 }

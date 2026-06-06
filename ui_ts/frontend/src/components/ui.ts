@@ -14,6 +14,31 @@ export const sectionHeader = (title: string, subtitle: string): string => `
     <p class="section-subtitle">${escapeHtml(subtitle)}</p>
   </div>`;
 
+export const zoneHeader = (title: string, subtitle: string): string => `
+  <div class="zone-header">
+    <h2 class="zone-title">${escapeHtml(title)}</h2>
+    <p class="zone-subtitle">${escapeHtml(subtitle)}</p>
+  </div>`;
+
+export const allocationBars = (
+  rows: Array<{ label: string; weight: number }>,
+): string => {
+  if (!rows.length) return noteCard("No allocation data yet.", true);
+  const bars = rows
+    .map(
+      (row) => `
+      <div class="alloc-row">
+        <div class="alloc-meta">
+          <span class="alloc-label">${escapeHtml(row.label)}</span>
+          <span class="alloc-pct">${escapeHtml(pct(row.weight))}</span>
+        </div>
+        <div class="alloc-track"><div class="alloc-fill" style="width:${Math.max(2, row.weight * 100)}%"></div></div>
+      </div>`,
+    )
+    .join("");
+  return `<div class="alloc-list">${bars}</div>`;
+};
+
 export const metricCard = (label: string, value: string): string => `
   <div class="metric-card">
     <div class="metric-label">${escapeHtml(label)}</div>
@@ -122,23 +147,30 @@ export const marketPanel = (observation: ObservationPayload, selectedTicker: str
     currency(row.high),
     `${row.volume.toLocaleString()}`,
   ]);
+  const weeklyChange =
+    selected?.change_vs_previous_close !== null && selected?.change_vs_previous_close !== undefined
+      ? pct(selected.change_vs_previous_close)
+      : "N/A";
+
   return `
-    <p class="app-caption">Visible through the end of the current week only. No later prices are shown.</p>
-    <div class="panel-grid-2">
-      <div>
+    <div class="market-detail-grid">
+      <div class="market-detail-main">
         ${metricGrid([
           ["Close", selected ? currency(selected.close) : "N/A"],
           ["Open", selected ? currency(selected.open) : "N/A"],
-          ["Range", selected ? `${currency(selected.low)} - ${currency(selected.high)}` : "N/A"],
-          ["History", `${history.length}w`],
+          ["Week change", weeklyChange],
+          ["Visible weeks", `${history.length}`],
         ])}
-        ${change !== null ? `<p class="note-card">Weekly change: ${currency(change)}</p>` : ""}
-        ${lineChart(historyValues, { label: `${selectedTicker} visible close history` })}
+        ${lineChart(historyValues, { label: `${selectedTicker} price history (visible only)` })}
       </div>
-      <div>${insightChips([["Visible history only", "neutral"], ["No look-ahead", "good"]])}</div>
+      <div class="market-detail-aside">
+        ${selected ? noteCard(`${selectedTicker} range this week: ${currency(selected.low)} – ${currency(selected.high)}`, true) : ""}
+        ${change !== null ? noteCard(`Change vs prior visible close: ${currency(change)}`, true) : ""}
+      </div>
     </div>
-    <h3>Current market table</h3>
-    ${dataTable(["Stock", "Close", "Change", "Low", "High", "Volume"], marketRows)}
+    <div class="table-wrap">
+      ${dataTable(["Stock", "Close", "Change", "Low", "High", "Volume"], marketRows)}
+    </div>
   `;
 };
 
