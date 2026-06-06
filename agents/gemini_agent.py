@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from dataclasses import asdict, dataclass
 from datetime import datetime
 import json
@@ -29,6 +30,7 @@ _DEPRECATED_GEMINI_MODELS: dict[str, str] = {
 
 
 _DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
+_DEFAULT_GEMINI_TIMEOUT_SECONDS = 8.0
 
 
 def resolve_gemini_model(requested: str | None) -> str:
@@ -90,7 +92,19 @@ class HttpGeminiClient:
             response_mime_type="application/json",
         )
         gemini_model = self._genai.GenerativeModel(model)
-        response = gemini_model.generate_content(prompt, generation_config=generation_config)
+        timeout_seconds = _gemini_timeout_seconds()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                gemini_model.generate_content,
+                prompt,
+                generation_config=generation_config,
+            )
+            try:
+                response = future.result(timeout=timeout_seconds)
+            except FuturesTimeoutError as exc:
+                raise TimeoutError(
+                    f"Gemini request timed out after {timeout_seconds:.0f}s."
+                ) from exc
         text = getattr(response, "text", None) or ""
         if not text.strip():
             block_reason = _response_block_reason(response)
@@ -113,6 +127,14 @@ def _response_block_reason(response: Any) -> str | None:
         if finish_reason and str(finish_reason).upper() not in {"STOP", "FINISHREASON.STOP"}:
             return f"Gemini stopped generation: {finish_reason}"
     return None
+
+
+def _gemini_timeout_seconds() -> float:
+    raw = os.environ.get("GEMINI_TIMEOUT_SECONDS", str(_DEFAULT_GEMINI_TIMEOUT_SECONDS))
+    try:
+        return max(3.0, min(float(raw), 25.0))
+    except ValueError:
+        return _DEFAULT_GEMINI_TIMEOUT_SECONDS
 
 
 def build_gemini_client() -> GeminiClient:

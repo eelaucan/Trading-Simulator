@@ -6,10 +6,14 @@ from dataclasses import dataclass
 from datetime import datetime
 import os
 from pathlib import Path
+import time
 from typing import Any
 
 from agents.gemini_agent import GeminiTradingAgent
+from agents.llm_policy import apply_signal_rescue, should_apply_signal_rescue
+from agents.llm_signals import build_signal_context
 from agents.runner import run_benchmark_agent
+from simulator.actions import Action, ActionType
 from simulator.actions import Action
 from simulator.config import SimulatorConfig
 from simulator.env import TradingEnvironment
@@ -223,7 +227,17 @@ def _start_gemini_session(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def advance_gemini_session(token: str) -> dict[str, Any]:
-    """Ask Gemini for the current week, submit the batch, and return the updated session."""
+    """Advance one Gemini decision week."""
+    return advance_gemini_session_batch(token, max_steps=1)
+
+
+def advance_gemini_session_batch(
+    token: str,
+    *,
+    max_steps: int = 1,
+    time_budget_seconds: float | None = None,
+) -> dict[str, Any]:
+    """Advance up to ``max_steps`` weeks within a serverless time budget."""
     _require_gemini_api_key()
     runtime = decode_runtime(token)
     if runtime.run_mode != "ai_gemini":
@@ -231,17 +245,118 @@ def advance_gemini_session(token: str) -> dict[str, Any]:
     if runtime.status != SessionStatus.RUNNING or runtime.observation is None:
         raise ValueError("Session is not active.")
 
-    agent = GeminiTradingAgent(simulator_config=runtime.env.config)
-    actions = agent.decide(runtime.observation)
+    steps = max(1, min(int(max_steps), 5))
+    budget = time_budget_seconds if time_budget_seconds is not None else 8.5
+    deadline = time.monotonic() + max(3.0, min(float(budget), 25.0))
+
+    response: dict[str, Any] | None = None
+    completed = 0
+    while (
+        runtime.status == SessionStatus.RUNNING
+        and runtime.observation is not None
+        and completed < steps
+        and time.monotonic() < deadline
+    ):
+        _run_one_gemini_step(runtime)
+        completed += 1
+        response = _response(runtime)
+
+    if response is None:
+        raise ValueError("Session is not active.")
+    response["batch_steps"] = completed
+    return response
+
+
+def _run_one_gemini_step(runtime: RuntimeSession) -> None:
+    observation = runtime.observation
+    if observation is None:
+        raise ValueError("Session is not active.")
+
+    signal_context = build_signal_context(observation, runtime.env.config)
+    model_name = resolve_gemini_model(os.environ.get("GEMINI_MODEL"))
+    hold_action = [Action(action_type=ActionType.HOLD)]
+    decision_source = "llm"
+    rationale = ""
+    error: str | None = None
+
+    if should_apply_signal_rescue(observation, hold_action, signal_context):
+        actions = apply_signal_rescue(observation, runtime.env.config)
+        decision_source = "signal_rescue"
+        rationale = "Signal rescue used to deploy capital under serverless time limits."
+    else:
+        agent = GeminiTradingAgent(simulator_config=runtime.env.config)
+        try:
+            actions = agent.decide(observation)
+            if agent.decision_records:
+                latest = agent.decision_records[-1]
+                rationale = str(latest.get("rationale", ""))
+                error = latest.get("error")
+                model_name = str(latest.get("model", model_name))
+                if latest.get("used_fallback"):
+                    decision_source = "fallback_hold"
+                elif latest.get("decision_source"):
+                    decision_source = str(latest.get("decision_source"))
+        except TimeoutError as exc:
+            actions = apply_signal_rescue(observation, runtime.env.config)
+            decision_source = "signal_rescue"
+            rationale = "Signal rescue applied after Gemini timeout."
+            error = str(exc)
+
+        if should_apply_signal_rescue(observation, actions, signal_context):
+            actions = apply_signal_rescue(observation, runtime.env.config)
+            decision_source = "signal_rescue"
+            rationale = (
+                f"{rationale} Signal rescue applied after under-investment.".strip()
+                if rationale
+                else "Signal rescue applied after under-investment."
+            )
+
+    decision_record = {
+        "week_index": int(observation.week_index),
+        "date": observation.date.isoformat(),
+        "rationale": rationale,
+        "model": model_name,
+        "generated_actions": _actions_to_dicts(actions),
+        "used_fallback": decision_source == "fallback_hold",
+        "decision_source": decision_source,
+        "selected_focus": list(signal_context.get("selected_focus_tickers", [])),
+        "error": error,
+    }
+
     runtime.current_batch = actions
     if runtime.llm_decision_log is None:
         runtime.llm_decision_log = []
-    runtime.llm_decision_log.extend(agent.decision_records)
+    runtime.llm_decision_log.append(decision_record)
     runtime.error = None
-    response = _submit_batch(runtime)
-    if runtime.llm_decision_log:
-        response["llm_decision_log"] = list(runtime.llm_decision_log)
-    return response
+    _submit_batch(runtime)
+
+
+def _compact_decision_record(record: dict[str, Any]) -> dict[str, Any]:
+    compact = dict(record)
+    compact.pop("raw_response", None)
+    return compact
+
+
+def _actions_to_dicts(actions: list[Action]) -> list[dict[str, Any]]:
+    return [
+        {
+            "action_type": action.action_type.value,
+            "ticker": action.ticker,
+            "quantity": action.quantity,
+            "quantity_type": (
+                None if action.quantity_type is None else action.quantity_type.value
+            ),
+            "fraction": action.fraction,
+            "stop_price": action.stop_price,
+        }
+        for action in actions
+    ]
+
+
+def resolve_gemini_model(requested: str | None) -> str:
+    from agents.gemini_agent import resolve_gemini_model as _resolve
+
+    return _resolve(requested)
 
 
 def _require_gemini_api_key() -> None:
@@ -308,6 +423,7 @@ def _submit_batch(runtime: RuntimeSession) -> dict[str, Any]:
 
 
 def _response(runtime: RuntimeSession) -> dict[str, Any]:
+    include_planner = runtime.run_mode != "ai_gemini"
     body = session_payload(
         env=runtime.env,
         metadata=runtime.metadata,
@@ -319,10 +435,14 @@ def _response(runtime: RuntimeSession) -> dict[str, Any]:
         last_step_info=runtime.last_step_info,
         error=runtime.error,
         run_mode=runtime.run_mode,
+        include_planner=include_planner,
     )
     body["session"] = encode_runtime(runtime)
     if runtime.llm_decision_log:
-        body["llm_decision_log"] = list(runtime.llm_decision_log)
+        if runtime.status == SessionStatus.FINISHED:
+            body["llm_decision_log"] = list(runtime.llm_decision_log)
+        else:
+            body["latest_decision"] = runtime.llm_decision_log[-1]
         fallback_weeks = sum(
             1 for record in runtime.llm_decision_log if record.get("used_fallback")
         )

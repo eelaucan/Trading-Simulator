@@ -245,6 +245,7 @@ def session_payload(
     last_step_info: dict[str, Any] | None = None,
     error: str | None = None,
     run_mode: str = "human",
+    include_planner: bool = True,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "status": status,
@@ -256,11 +257,12 @@ def session_payload(
     }
     if observation is not None:
         payload["observation"] = observation_to_dict(observation)
-        payload["planner_props"] = build_trade_planner_props(
-            config=env.config,
-            observation=observation,
-            current_batch=current_batch,
-        )
+        if include_planner:
+            payload["planner_props"] = build_trade_planner_props(
+                config=env.config,
+                observation=observation,
+                current_batch=current_batch,
+            )
     if metrics is not None:
         payload["metrics"] = metrics_to_dict(metrics)
     if last_step_info is not None:

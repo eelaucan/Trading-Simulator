@@ -209,10 +209,16 @@ export class TradingSimulatorApp {
     async runGeminiEpisode() {
         while (this.session?.status === "running") {
             const week = (this.session.observation?.week_index ?? 0) + 1;
-            this.geminiStatus = `Gemini is deciding for week ${week}…`;
+            this.geminiStatus = `Running weeks from ${week}…`;
             this.render();
             try {
-                this.session = await advanceGeminiStep(this.session.session);
+                this.session = await advanceGeminiStep(this.session.session, 3);
+                const batchSteps = this.session.batch_steps ?? 1;
+                const currentWeek = this.session.observation?.week_index;
+                if (currentWeek !== undefined) {
+                    this.geminiStatus = `Processed ${batchSteps} week(s). Now at week ${currentWeek + 1}.`;
+                    this.render();
+                }
             }
             catch (error) {
                 alert(error instanceof Error ? error.message : "Gemini step failed.");

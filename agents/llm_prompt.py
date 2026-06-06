@@ -146,7 +146,7 @@ def _market_rows(observation: Observation) -> list[dict[str, Any]]:
     return rows
 
 
-def _price_history_rows(observation: Observation, max_weeks: int = 12) -> list[dict[str, Any]]:
+def _price_history_rows(observation: Observation, max_weeks: int = 8) -> list[dict[str, Any]]:
     history = observation.price_history.copy()
     if history.empty:
         return []

@@ -8,7 +8,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .service import advance_gemini_session, discover_datasets, handle_planner_event, start_session
+from .service import (
+    advance_gemini_session,
+    advance_gemini_session_batch,
+    discover_datasets,
+    handle_planner_event,
+    start_session,
+)
 
 
 app = FastAPI(title="Trading Simulator API", version="1.0.0")
@@ -37,6 +43,7 @@ class PlannerEventRequest(BaseModel):
 
 class GeminiStepRequest(BaseModel):
     session: str
+    max_steps: int = Field(default=3, ge=1, le=5)
 
 
 @app.get("/api/datasets")
@@ -62,7 +69,12 @@ def create_session(request: StartSessionRequest) -> dict[str, Any]:
 @app.post("/api/session/ai-step")
 def gemini_step(request: GeminiStepRequest) -> dict[str, Any]:
     try:
-        return advance_gemini_session(request.session)
+        if request.max_steps <= 1:
+            return advance_gemini_session(request.session)
+        return advance_gemini_session_batch(
+            request.session,
+            max_steps=request.max_steps,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - runtime guard

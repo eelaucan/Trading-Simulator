@@ -77,6 +77,24 @@ def test_should_apply_signal_rescue_for_hold_with_high_cash() -> None:
     assert should_apply_signal_rescue(observation, [Action(action_type=ActionType.HOLD)], context)
 
 
+def test_gemini_batch_advances_multiple_weeks(monkeypatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    from api.service import advance_gemini_session_batch, start_session
+
+    session = start_session(
+        {
+            "run_mode": "ai_gemini",
+            "participant_id": "batch_test",
+            "episode_name": "pilot",
+            "dataset_path": "data/sample/weekly_ohlcv_synthetic.csv",
+        }
+    )
+    response = advance_gemini_session_batch(session["session"], max_steps=3, time_budget_seconds=20)
+    assert response["batch_steps"] == 3
+    assert response["status"] == "running"
+    assert "planner_props" not in response
+
+
 def test_hold_only_client_runs_full_episode_with_signal_rescue() -> None:
     market = MarketReplay("data/sample/weekly_ohlcv_synthetic.csv")
     config = SimulatorConfig(ticker_universe=market.available_tickers)

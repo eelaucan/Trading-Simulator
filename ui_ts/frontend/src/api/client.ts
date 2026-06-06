@@ -88,6 +88,8 @@ export interface SessionResponse {
   last_step_info?: Record<string, unknown>;
   error?: string | null;
   done: boolean;
+  batch_steps?: number;
+  latest_decision?: Record<string, unknown>;
   llm_decision_log?: Array<Record<string, unknown>>;
   gemini_summary?: {
     decisions: number;
@@ -107,7 +109,7 @@ export interface StartSessionInput {
   notes: string;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, attempt = 0): Promise<T> {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     ...init,
@@ -122,6 +124,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       }
     } catch {
       // Keep raw response text when the API does not return JSON.
+    }
+    const isTimeout =
+      response.status === 504 ||
+      /timed out|timeout|FUNCTION_INVOCATION_TIMEOUT/i.test(message);
+    if (isTimeout && attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+      return request<T>(path, init, attempt + 1);
     }
     throw new Error(message);
   }
@@ -140,10 +149,13 @@ export async function startSession(input: StartSessionInput): Promise<SessionRes
   });
 }
 
-export async function advanceGeminiStep(session: string): Promise<SessionResponse> {
+export async function advanceGeminiStep(
+  session: string,
+  maxSteps = 3,
+): Promise<SessionResponse> {
   return request<SessionResponse>("/api/session/ai-step", {
     method: "POST",
-    body: JSON.stringify({ session }),
+    body: JSON.stringify({ session, max_steps: maxSteps }),
   });
 }
 
